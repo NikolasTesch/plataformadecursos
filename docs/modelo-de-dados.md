@@ -19,6 +19,7 @@ users ─┬─< sessions
        ├─< favorites >─ questions
        ├─< flashcards
        ├─< comments >─ materials
+       ├─< course_reviews >─ courses
        ├─< notifications
        ├─< entitlements >─ products
        ├─< purchases
@@ -29,6 +30,7 @@ users ─┬─< sessions
 courses ─< modules ─< materials ─< questions
 materials ─< video (via Bunny) ─────────────┐
 products ─< purchases/entitlements           │
+products ─< coupons                           │
 simulados ─< simulado_questions >─ questions │
 editals ─< edital_disciplines                │
 editals ─< material_edital >─ materials      │
@@ -151,7 +153,24 @@ Vídeo vive no Bunny Stream (V1). `materials.video_provider_id` + `video_status`
 
 > **D-P1 revogada (2026-08-12)**: passa a existir **1 assinatura com 2 períodos** (mensal e anual), não 2 produtos. Preço anual configurável pelo admin (default: 2 meses grátis).
 
-**purchases** — id, user_id fk, product_id fk, mp_payment_id unique, tipo enum `checkout`/`trial`, status enum `pendente`/`aprovado`/`recusado`/`reembolsado`, valor_cents, criado_em, atualizado_em.
+**purchases** — id, user_id fk, product_id fk, mp_payment_id unique, tipo enum `checkout`/`trial`, status enum `pendente`/`aprovado`/`recusado`/`reembolsado`, valor_cents, **coupon_id fk null**, criado_em, atualizado_em. (coupon_id registra o uso do cupom — US-46)
+
+**coupons** (US-45/46 — cupons de desconto)
+| coluna | tipo | notas |
+|---|---|---|
+| id | uuid pk | |
+| codigo | text unique | case-insensitive, ex.: "CONCURSO30" |
+| tipo | enum `percentual`/`fixo` | |
+| valor | numeric | % (1–100) ou valor em R$ (centavos) |
+| escopo | enum `assinatura`/`venda_unica` | ou produto específico via product_id null |
+| product_id | fk null | null = vale para qualquer produto do escopo |
+| valido_de / valido_ate | timestamptz | |
+| limite_uso | int null | null = ilimitado |
+| usos | int default 0 | incrementado atomicamente no uso |
+| ativo | boolean default true | |
+| criado_em / atualizado_em | timestamptz | |
+
+> Cupom: desconto apenas na 1ª cobrança (D-K1); 1 cupom por compra, não acumula com trial (D-K2).
 
 **entitlements**
 | coluna | tipo | notas |
@@ -199,6 +218,20 @@ Vídeo vive no Bunny Stream (V1). `materials.video_provider_id` + `video_status`
 
 **comments** — id, material_id fk (cascade), user_id fk, conteudo text (≤2.000), respondido boolean default false, resposta_admin text null, criado_em, atualizado_em.
 
+**course_reviews** (US-47/48 — avaliações de curso)
+| coluna | tipo | notas |
+|---|---|---|
+| id | uuid pk | |
+| course_id | fk (cascade) | |
+| user_id | fk (cascade) | |
+| nota | int 1–5 | obrigatória |
+| comentario | text null | ≤500 caracteres, sanitizado |
+| status | enum `pendente`/`aprovado`/`oculta` | default `pendente` |
+| criado_em / atualizado_em | timestamptz | |
+| | | unique(course_id, user_id) — editar substitui (D-R1) |
+
+> Nota média pública = média das avaliações `aprovado` (D-R2).
+
 ### 2.10 Notificações e Engajamento (`SPEC-notificacoes.md`, `SPEC-engajamento.md`)
 
 **notifications** — id, user_id fk, tipo enum, titulo, corpo, lida boolean default false, notification_key text unique (idempotência N2), criado_em.
@@ -228,6 +261,8 @@ Vídeo vive no Bunny Stream (V1). `materials.video_provider_id` + `video_status`
 | entitlements | (user_id, product_id) | gating R1 |
 | study_activity | (user_id, dia) | streak/relatório |
 | editals | (status, publicada_em) | listagem de trilhas |
+| coupons | (valido_ate, ativo) | busca de cupons válidos no checkout |
+| course_reviews | (course_id, status) | nota média e listagem na sales page |
 
 - **users.trial_usado**: check constraint de 1 trial por usuário.
 - **materials.amostra**: validado em serviço (máx. 1 por curso — C2), não em constraint.
@@ -243,6 +278,10 @@ Vídeo vive no Bunny Stream (V1). `materials.video_provider_id` + `video_status`
 | D-P1 | Revogada: 1 assinatura com 2 períodos (mensal/anual), preço anual configurável | 2026-08-12 |
 | P0-1 | Trial 7 dias sem cartão; `users.trial_usado` | 2026-08-12 |
 | P0-3 | Concursos: origem manual + scraping automático | 2026-08-12 |
+| D-K1 | Cupom desconta somente a 1ª cobrança (renovações a preço cheio) | 2026-08-13 |
+| D-K2 | 1 cupom por compra; não acumula com trial | 2026-08-13 |
+| D-R1 | Avaliação exige entitlement real (amostra não conta); unique(course_id, user_id) | 2026-08-13 |
+| D-R2 | Nota média considera apenas avaliações aprovadas | 2026-08-13 |
 
 ## 5. Histórico
 
@@ -250,3 +289,4 @@ Vídeo vive no Bunny Stream (V1). `materials.video_provider_id` + `video_status`
 |---|---|---|
 | 0.1 | 2026-08-12 | Versão inicial — consolida 13 specs + features P1/P2 |
 | 0.1 | 2026-08-12 | **APROVADO** — revisão de aplicabilidade concluída |
+| 0.2 | 2026-08-13 | **Novas entidades aprovadas**: `coupons` + `purchases.coupon_id` (US-45/46, D-K1/D-K2) e `course_reviews` (US-47/48, D-R1/D-R2) |

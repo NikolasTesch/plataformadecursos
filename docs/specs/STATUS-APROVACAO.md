@@ -39,7 +39,7 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 
 ## 2. Matriz de Aprovação (specs de domínio)
 
-**14 specs aprovadas** (13 domínios em 2026-08-12 + `SPEC-frontend.md` em 2026-08-13). Pendente: `SPEC-landing.md` (proposta 2026-08-13). `SPEC-mobile.md`: idealização.
+**15 specs aprovadas** (13 domínios em 2026-08-12 + `SPEC-frontend.md` e `SPEC-landing.md` em 2026-08-13). `SPEC-mobile.md`: idealização. **Novas US aprovadas em 2026-08-13**: US-44 (sales page), US-45/46 (cupons), US-47/48 (avaliações de curso) — master v2.5.
 
 | # | Spec | Versão | US cobertas | Status |
 |---|---|---|---|---|
@@ -58,7 +58,7 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 | 13 | `SPEC-editais.md` | 0.1 | US-42 | ✅ [APROVADO] |
 | 14 | `SPEC-frontend.md` | 0.2 | Transversal (UI/design system) | ✅ [APROVADO — 2026-08-13] |
 | 15 | `SPEC-mobile.md` | 0.1 | — (idealização) | [IDEALIZAÇÃO] — sem aprovação necessária |
-| 16 | `SPEC-landing.md` | 0.1 | Transversal (landing de alta conversão) | [PENDENTE] — proposta 2026-08-13 |
+| 16 | `SPEC-landing.md` | 0.2 | Transversal (landing de alta conversão) | ✅ [APROVADO — 2026-08-13] |
 
 ## 3. Documentos de Apoio
 
@@ -95,3 +95,4 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 | 0.3 | 2026-08-12 | **Todas as specs aprovadas** (13 domínios + modelo de dados + plano). Corrigido: Q4 alinhada ao modelo de dados; cabeçalho SPEC-trilhas v0.2 |
 | 0.4 | 2026-08-13 | **`SPEC-frontend.md` aprovada** (v0.2) e `DESIGN.md` v0.7 aprovado — documentação 100% aprovada (14 specs + 3 docs de apoio); única idealização: mobile |
 | 0.5 | 2026-08-13 | **`SPEC-landing.md` v0.1 adicionada** — landing de alta conversão [PENDENTE] (funil, CRO, SEO, analytics) |
+| 0.6 | 2026-08-13 | **`SPEC-landing.md` v0.2 aprovada** (15 specs aprovadas) + **novas US aprovadas**: US-44 (sales page), US-45/46 (cupons), US-47/48 (avaliações) — specs conteudo 0.3, pagamentos 0.3, comunidade 0.2 revisadas |

@@ -139,7 +139,7 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 
 - **Fase**: especificação **concluída** — implementação **NÃO iniciada** (não há `src/`, `prisma/` nem `package.json`).
 - **Documentação aprovada**: PRD v2.3 · SPEC master v2.2 · modelo-de-dados v0.1 · plano de implementação v0.1 (S1–S8) · **13 specs de domínio** `[APROVADO]` (`docs/specs/STATUS-APROVACAO.md`).
-- **Documentação**: **14 specs de domínio aprovadas** (inclui `SPEC-frontend.md` v0.2 e `DESIGN.md` v0.7, aprovados em 2026-08-13). Pendente de aprovação: `SPEC-landing.md` v0.1 (landing de alta conversão — proposta 2026-08-13). Fora do escopo: `SPEC-mobile.md` ([IDEALIZAÇÃO]).
+- **Documentação**: **15 specs de domínio aprovadas** (inclui `SPEC-frontend.md` v0.2 e `SPEC-landing.md` v0.2, aprovados em 2026-08-13). **Master v2.5**: novas US aprovadas em 2026-08-13 — US-44 (sales page), US-45/46 (cupons), US-47/48 (avaliações). Fora do escopo: `SPEC-mobile.md` ([IDEALIZAÇÃO]).
 - **Prototipagem**: concluída no **Pencil** (2026-08-13) — 63 telas (32 desktop + 31 mobile), versões dark (`D `), 3 bibliotecas de componentes, tokens duais light/dark documentados em `DESIGN.md` §12–13. Exportação de tokens → Tailwind ainda pendente.
 - **Marca**: **ConcursFoco** (nome decidido em 2026-08-13, PRD v2.3). Logo final ainda a explorar.
 - **Próximo slice**: **S1 — Fundação** (scaffold Next.js+TS, Prisma+Postgres via Docker, schema completo, Auth.js com roles, seed, lint/test) — já desbloqueado por `SPEC-auth.md` + `modelo-de-dados.md` + plano aprovados.

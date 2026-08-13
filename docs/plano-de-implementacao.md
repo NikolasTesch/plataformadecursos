@@ -1,8 +1,8 @@
 # Plano de Implementação — Slices S1 a S8
 
-- **Versão**: 0.1
-- **Data**: 2026-08-12
-- **Status**: [APROVADO — 2026-08-12]
+- **Versão**: 0.2
+- **Data**: 2026-08-13
+- **Status**: [APROVADO — 2026-08-12 · revisado 2026-08-13]
 - **Método**: SDD — cada slice termina funcional e verificável contra as specs aprovadas (AGENTS.md §2).
 
 ---
@@ -38,9 +38,9 @@ Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 
 |---|---|
 | **Escopo** | CRUD cursos/módulos; materiais `pdf` (R2 upload + URL assinada) e `texto` (sanitização); rascunho/publicado; ordenação; amostra (R4/C2); tipo `resumo` (5º tipo) + impressão PDF |
 | **Specs** | `SPEC-conteudo.md` |
-| **US** | US-03, US-04, US-05, US-06, US-09, US-40, US-41 |
-| **Testes** | Unit: C2 (máx 1 amostra), C5 (URL assinada), sanitização HTML. E2E: fluxo admin completo criar→publicar |
-| **Saída** | Admin publica PDF/texto/resumo; aluno (com acesso mock) lê |
+| **US** | US-03, US-04, US-05, US-06, US-09, US-40, US-41, **US-44** (sales page) |
+| **Testes** | Unit: C2 (máx 1 amostra), C5 (URL assinada), sanitização HTML, sales page nunca expõe conteúdo (R12). E2E: fluxo admin completo criar→publicar; visitante vê sales page sem vazar material |
+| **Saída** | Admin publica PDF/texto/resumo; aluno (com acesso mock) lê; **visitante converte pela página pública do curso** |
 
 ### S3 — Área do aluno core (navegação + gating + progresso + anotações)
 | Item | Conteúdo |
@@ -74,17 +74,17 @@ Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 
 |---|---|
 | **Escopo** | Produtos (assinatura mensal/anual configurável, venda única); trial 7 dias sem cartão (P0-1); checkout MP com **Pix e cartão**; webhooks idempotentes (P1–P6); renovações (R8); refund (P4); expiração |
 | **Specs** | `SPEC-pagamentos.md` |
-| **US** | US-10, US-16, US-17, US-18, US-32, US-33, US-34 |
-| **Testes** | Unit: idempotência, R8 (renovação soma ao fim), trial único. E2E: E2E-P1..P4 (webhook com assinatura válida) |
-| **Saída** | Aluno assina/compra; acesso concedido/revogado automaticamente |
+| **US** | US-10, US-16, US-17, US-18, US-32, US-33, US-34, **US-45** (cupons admin), **US-46** (cupom no checkout) |
+| **Testes** | Unit: idempotência, R8 (renovação soma ao fim), trial único, validação de cupom (expirado/esgotado/inválido), desconto só na 1ª cobrança. E2E: E2E-P1..P4 (webhook com assinatura válida), E2E-P7/P8 (cupom) |
+| **Saída** | Aluno assina/compra com desconto; acesso concedido/revogado automaticamente |
 
 ### S7 — Expansão (trilhas, simulados, flashcards, comunidade, certificados, PWA, editais)
 | Item | Conteúdo |
 |---|---|
-| **Escopo** | Trilhas por edital (versionamento T3); simulados cronometrados (entrega automática Q2, histórico Q3); flashcards SM-2 (F1–F4); comentários (CO1–CO5); PWA offline (AL4/AL5, download lote ZIP); rastreamento de editais manual + scraping (P0-3) |
-| **Specs** | `SPEC-trilhas.md`, `SPEC-questoes.md` (§simulados), `SPEC-flashcards.md`, `SPEC-comunidade.md`, `SPEC-aluno.md` (§PWA), `SPEC-editais.md` |
-| **US** | US-25, US-27, US-26, US-28, US-30, US-42, US-43 |
-| **Testes** | Unit: T3 (versionamento), Q2 (entrega automática), F1/F2 (intervalos SM-2), fila de sync offline. E2E: E2E-T1..T3, E2E-Q2/Q3, E2E-F1..F3, E2E-AL3, E2E-CO1/CO2 |
+| **Escopo** | Trilhas por edital (versionamento T3); simulados cronometrados (entrega automática Q2, histórico Q3); flashcards SM-2 (F1–F4); comentários (CO1–CO5); **avaliações de curso (US-47/48 — nota média + moderação)**; PWA offline (AL4/AL5, download lote ZIP); rastreamento de editais manual + scraping (P0-3) |
+| **Specs** | `SPEC-trilhas.md`, `SPEC-questoes.md` (§simulados), `SPEC-flashcards.md`, `SPEC-comunidade.md` (comentários + avaliações), `SPEC-aluno.md` (§PWA), `SPEC-editais.md` |
+| **US** | US-25, US-27, US-26, US-28, US-30, US-42, US-43, **US-47** (avaliação), **US-48** (moderação) |
+| **Testes** | Unit: T3 (versionamento), Q2 (entrega automática), F1/F2 (intervalos SM-2), fila de sync offline, CO6 (gating de avaliação) e nota média (apenas aprovadas). E2E: E2E-T1..T3, E2E-Q2/Q3, E2E-F1..F3, E2E-AL3, E2E-CO1..CO4 |
 | **Saída** | Produto completo: trilha, simulado, revisão, dúvidas, offline |
 
 ### S8 — Engajamento & dados (streak, notificações, relatório, admin avançado, busca, exportação)
@@ -112,3 +112,4 @@ Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 
 |---|---|---|
 | 0.1 | 2026-08-12 | Versão inicial — 8 slices cobrindo US-01 a US-43 |
 | 0.1 | 2026-08-12 | **APROVADO** — revisão de aplicabilidade concluída |
+| 0.2 | 2026-08-13 | **Revisado** — novas US aprovadas: US-44 (sales page → S2), US-45/46 (cupons → S6), US-47/48 (avaliações → S7) |

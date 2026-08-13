@@ -1,6 +1,6 @@
 # SPEC — Plataforma de Estudos para Concursos
 
-- **Versão**: 2.4
+- **Versão**: 2.5
 - **Data**: 2026-08-13
 - **Status**: [APROVADA — contrato de implementação ativo]
 - **Formato**: Spec-Driven Development — declarativa, descreve **o que** o sistema deve fazer, nunca **como**. Cada comportamento é verificável e testável.
@@ -71,7 +71,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | Streak e meta diária de estudo | `SPEC-engajamento.md` | ✅ [APROVADO] |
 | Rastreamento de editais e concursos | `SPEC-editais.md` | ✅ [APROVADO] |
 | Design system e experiência de interface | `SPEC-frontend.md` | ✅ [APROVADO — 2026-08-13] |
-| Landing de alta conversão (rota `/`) | `SPEC-landing.md` | [PENDENTE] — proposta 2026-08-13 |
+| Landing de alta conversão (rota `/`) | `SPEC-landing.md` | ✅ [APROVADO — 2026-08-13] |
 | Mobile (app nativo) | `SPEC-mobile.md` | [IDEALIZAÇÃO] — não implementar |
 
 ### US-01 — Registro de aluno
@@ -342,6 +342,44 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 
 - ZIP assíncrono: PDFs, textos, questões (sem gabarito); vídeos fora; URL assinada 24h; gating duplo. Detalhe: `SPEC-aluno.md` §3.7.
 
+### US-44 — Página pública de curso (sales page)
+**Como** visitante, **quero** ver a página pública de um curso **para** decidir assinar ou comprar antes de criar conta.
+
+- Rota pública `/cursos/[slug]` (SSG/ISR, SEO — SPEC-landing R-L6).
+- Conteúdo exibido: nome, descrição, imagem, grade resumida (módulos e **títulos** de materiais — nunca conteúdo, R12), material amostra (R4), preço (venda única) ou badge "Incluído na assinatura".
+- CTAs: "Começar trial grátis" / "Assinar e acessar" / "Comprar curso" (checkout exige login — D-P2).
+- Avaliações aprovadas do curso (nota média + comentários — US-47/48).
+- Nunca expõe conteúdo de material não-amostra, mesmo para visitante não autenticado (R12). Detalhe: `SPEC-conteudo.md` §3.8.
+
+### US-45 — Admin cria cupons de desconto
+**Como** admin, **quero** criar cupons de desconto **para** promover assinaturas e cursos.
+
+- Campos: código único, tipo (`percentual` | `fixo`), valor, escopo (assinatura e/ou venda única, ou produto específico), validade (início/fim), limite de uso (opcional), status ativo/inativo.
+- Cupom inativo/expirado/esgotado não é aplicável no checkout.
+- Desconto incide sobre a **1ª cobrança apenas** (renovações a preço cheio — D-K1). Detalhe: `SPEC-pagamentos.md` §3.5.
+
+### US-46 — Aluno aplica cupom no checkout
+**Como** aluno, **quero** aplicar um cupom de desconto **para** pagar menos.
+
+- Campo de cupom no checkout; validação: ativo, dentro da validade, com uso disponível, escopo compatível.
+- Erros amigáveis: "cupom expirado", "cupom esgotado", "cupom inválido".
+- 1 cupom por compra; não acumula com trial nem com outro cupom (D-K2).
+- Valor final refletido antes do redirecionamento ao Mercado Pago; uso registrado na compra. Detalhe: `SPEC-pagamentos.md` §3.5.
+
+### US-47 — Aluno avalia curso
+**Como** aluno, **quero** avaliar um curso que tenho acesso **para** ajudar outros concurseiros na decisão.
+
+- Nota 1–5 (obrigatória) + comentário curto (máx. 500 caracteres, opcional).
+- Exige entitlement real do curso (pagamento/trial/admin — amostra não conta); 1 avaliação por aluno/curso; editar substitui (D-R1).
+- Avaliação nasce `pendente` (moderação); nota média considera apenas aprovadas (D-R2).
+- Avaliação aprovada aparece na página pública do curso (US-44) e pode ser destaque na landing. Detalhe: `SPEC-comunidade.md` §3.5.
+
+### US-48 — Admin modera avaliações
+**Como** admin, **quero** moderar avaliações **para** manter a prova social confiável.
+
+- Lista com filtros (status, curso, nota); ações: aprovar, ocultar, excluir.
+- Avaliação oculta/excluída sai da nota média e da exibição pública. Detalhe: `SPEC-comunidade.md` §3.5.
+
 ---
 
 ## 5. Regras de Negócio (Consolidadas)
@@ -410,7 +448,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 
 ## 8. Critérios de Aceitação Globais (Definição de Pronto)
 
-1. Todas as US ativas (01–35, 37–43 — US-36 removida) implementadas e verificáveis conforme seus critérios (US 21–43 conforme specs de domínio aprovadas).
+1. Todas as US ativas (01–35, 37–48 — US-36 removida) implementadas e verificáveis conforme seus critérios (US 21–48 conforme specs de domínio aprovadas).
 2. Testes E2E (Playwright) cobrindo: registro/login, fluxo completo admin (criar curso → módulo → material → publicar), gating (E2E-1 a E2E-7), webhook.
 3. Testes unitários obrigatórios para o motor de gating (R1–R12) e cálculo de progresso.
 4. Seed de dados de exemplo (1 curso, 2 módulos, materiais dos 4 tipos, 1 produto de cada tipo).
@@ -440,3 +478,4 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | 2.2 | 2026-08-12 | Revisão de pendências: US-36 (relatório semanal) **removida**; T4 múltiplas trilhas ativas; busca indexa conteúdo de PDFs |
 | 2.3 | 2026-08-13 | Índice de specs (§4.1) sincronizado com o estado real (14 domínios [APROVADO], frontend aprovado em 2026-08-13); decisão aberta "nome do produto" resolvida → ConcursFoco |
 | 2.4 | 2026-08-13 | Novo domínio proposto: landing de alta conversão (`SPEC-landing.md` v0.1 [PENDENTE]) — índice §4.1 atualizado |
+| 2.5 | 2026-08-13 | **US-44 a US-48 aprovadas**: sales page por curso (US-44), cupons de desconto (US-45/46), avaliações de curso + moderação (US-47/48); SPEC-landing aprovada; specs de domínio revisadas (conteudo 0.3, pagamentos 0.3, comunidade 0.2) |

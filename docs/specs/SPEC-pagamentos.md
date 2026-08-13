@@ -1,8 +1,8 @@
 # SPEC-PAGAMENTOS — Produtos, Checkout e Webhooks (Mercado Pago)
 
-- **Versão**: 0.2
-- **Data**: 2026-08-12
-- **Status**: [APROVADO — 2026-08-12]
+- **Versão**: 0.3
+- **Data**: 2026-08-13
+- **Status**: [APROVADO — 2026-08-12 · revisado 2026-08-13]
 - **Domínio master**: US-10, US-16, US-17, US-18, US-32, US-33, US-34 (SPEC master v2.1 §4)
 
 ---
@@ -24,6 +24,8 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 | US-32 | Trial gratuito (7 dias, sem cartão) | Master v2.1 |
 | US-33 | Assinatura anual configurável | Master v2.1 |
 | US-34 | Pagamento via Pix | Master v2.1 |
+| US-45 | Admin cria cupons de desconto | Master v2.5 |
+| US-46 | Aluno aplica cupom no checkout | Master v2.5 |
 
 ---
 
@@ -70,6 +72,16 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 - Aluno vê status da assinatura na UI: ativa (data fim), expirando (≤3 dias — notificação US-23), expirada (CTA renovar).
 - Refund (reembolso): webhook de refund → revoga entitlement da compra (permanente volta a bloqueado; assinatura: trata como cancelamento).
 
+### 3.5 Cupons de desconto (US-45, US-46)
+- **Admin (US-45)**: CRUD de cupons — código único (case-insensitive), tipo `percentual` (1–100) ou `fixo` (R$), valor, escopo (`assinatura` | `venda_unica` | produto específico), validade (`valido_de`/`valido_ate`), limite de uso (opcional), status ativo/inativo.
+- **Checkout (US-46)**: campo de cupom na página de checkout; validação no servidor:
+  - Ativo, dentro da validade, com uso disponível, escopo compatível com o produto.
+  - Erros amigáveis: "cupom expirado" · "cupom esgotado" · "cupom inválido".
+  - **1 cupom por compra**; não acumula com trial (D-K2) — aluno em trial que aplica cupom: desconto vale para a 1ª cobrança da compra efetiva.
+- **Cálculo**: valor final = preço − desconto (nunca negativo); refletido na tela antes do redirecionamento ao MP; MP recebe o valor final.
+- **Desconto apenas na 1ª cobrança (D-K1)**: renovações de assinatura seguem o preço cheio vigente — o Checkout Pro de assinatura cobra o valor do item na criação; renovações do plano não incluem o cupom.
+- **Registro**: `purchases.coupon_id` (nullable) + contador de usos no cupom; limite de uso validado atomicamente (evita estouro por concorrência).
+
 ---
 
 ## 4. Regras Específicas do Domínio
@@ -85,6 +97,9 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 | P7 | 1 trial por usuário, sem cartão, 7 dias; trial não renovável nem conversível automaticamente. |
 | P8 | Assinatura anual: +365 dias na renovação (R8 adaptado); preço anual configurável (default 10x mensal). |
 | P9 | Pix disponível no checkout; pagamento Pix segue fluxo de webhook idêntico ao cartão (P1–P3). |
+| P10 | Cupom válido = ativo + dentro da validade + uso disponível + escopo compatível; validação no servidor. |
+| P11 | Desconto do cupom incide somente na 1ª cobrança (D-K1); renovações a preço cheio. |
+| P12 | 1 cupom por compra; não acumula com trial nem com outro cupom (D-K2); uso registrado em `purchases.coupon_id`. |
 
 ---
 
@@ -120,6 +135,16 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 **When** renovação anual aprovada em 10/03/2027
 **Then** `acesso_ate = 15/03/2028`
 
+### E2E-P7 — Cupom expirado rejeitado
+**Given** cupom com `valido_ate` no passado, escopo compatível
+**When** aluno aplica o cupom no checkout
+**Then** erro "cupom expirado" e o valor permanece cheio
+
+### E2E-P8 — Desconto só na primeira cobrança
+**Given** aluno compra assinatura mensal com cupom de 50% (valor da 1ª cobrança = metade)
+**When** ocorre a 1ª renovação mensal via webhook
+**Then** a renovação cobra o preço cheio vigente e o entitlement renova normalmente (R8)
+
 ---
 
 ## 6. Decisões do Domínio
@@ -130,6 +155,8 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 | 2026-08-12 | D-P2: compra exige conta (login/cadastro antes do checkout) |
 | 2026-08-12 | Reembolso tratado via webhook (revogação automática) |
 | 2026-08-12 | P0-1: trial 7 dias sem cartão, 1 por usuário |
+| 2026-08-13 | D-K1: cupom desconta somente a 1ª cobrança (renovações a preço cheio) |
+| 2026-08-13 | D-K2: 1 cupom por compra; não acumula com trial nem com outro cupom |
 
 ---
 
@@ -140,3 +167,4 @@ Definir o comportamento de produtos comerciais (assinatura mensal/anual e venda 
 | 0.1 | 2026-08-12 | Versão inicial para aprovação |
 | 0.2 | 2026-08-12 | Trial 7 dias sem cartão (US-32), período anual configurável (US-33, D-P1 revogada), Pix (US-34) |
 | 0.2 | 2026-08-12 | **APROVADA** — revisão de aplicabilidade concluída |
+| 0.3 | 2026-08-13 | **Cupons de desconto (US-45/46)** — §3.5, regras P10–P12, E2E-P7/P8 (D-K1/D-K2) |

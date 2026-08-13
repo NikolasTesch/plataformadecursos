@@ -1,8 +1,8 @@
 # SPEC-LANDING — Landing Page de Alta Conversão
 
-- **Versão**: 0.1
+- **Versão**: 0.2
 - **Data**: 2026-08-13
-- **Status**: [PENDENTE DE APROVAÇÃO]
+- **Status**: [APROVADO — 2026-08-13]
 - **Domínio master**: transversal — aplica-se à rota `/` (e `#precos`, `/sobre`). Define a **experiência pública de conversão** (visitante → cadastro → trial → assinatura/venda única), complementando `SPEC-frontend.md` (tokens/componentes), `DESIGN.md` (§13 linguagem editorial) e `SPEC-pagamentos.md` (planos).
 
 ---
@@ -144,15 +144,15 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 
 ---
 
-## 10. Decisões em Aberto (para aprovação)
+## 10. Decisões (2026-08-13 — aprovadas pelo usuário)
 
-| # | Decisão | Recomendação |
+| # | Decisão | Resolução |
 |---|---|---|
-| L-A1 | Sales page por curso entra no escopo? | **Sim** — S2/S3 (complementa US-03/US-05) |
-| L-A2 | Prova social/depoimentos: admin gerencia (CRUD) ou conteúdo versionado no repo (MVP)? | Admin CRUD — mesmo padrão da gestão de conteúdo (adiável ao S8) |
-| L-A3 | Ferramenta de analytics: Vercel Analytics vs. GA4 | Vercel Analytics (simples, sem consentimento extra) |
-| L-A4 | Gestão de consentimento de cookies | Banner simples com opt-out de analytics (S1/S2) |
-| L-A5 | FAQ entra como conteúdo da landing (R-L5/R-L7) ou vira domínio próprio (suporte)? | Conteúdo da landing — reavaliar quando existir volume de suporte |
+| L-A1 | Sales page por curso entra no escopo? | **Sim** — nova US-44, entra no S2 (SPEC-conteudo §3.8) |
+| L-A2 | Prova social/depoimentos: admin gerencia (CRUD) ou conteúdo versionado no repo? | **Admin CRUD** — mesmo padrão da gestão de conteúdo (S8) |
+| L-A3 | Ferramenta de analytics | **Vercel Analytics** (simples, sem consentimento extra) |
+| L-A4 | Gestão de consentimento de cookies | **Banner simples** com opt-out de analytics (S1/S2) |
+| L-A5 | FAQ: conteúdo da landing ou domínio próprio (suporte)? | **Conteúdo da landing** — reavaliar quando existir volume de suporte |
 
 ---
 
@@ -161,3 +161,4 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 | Versão | Data | Mudança |
 |---|---|---|
 | 0.1 | 2026-08-13 | Versão inicial para aprovação — planejamento de alta conversão (funil §3, CRO §4, SEO/analytics §6/§7, A/B §5) |
+| 0.2 | 2026-08-13 | **APROVADO** pelo usuário; decisões §10 resolvidas (sales page S2, admin CRUD S8, Vercel Analytics, banner de consentimento, FAQ na landing) |

@@ -1,8 +1,8 @@
 # SPEC-CONTEUDO — Cursos, Módulos, Materiais e Publicação
 
-- **Versão**: 0.2
-- **Data**: 2026-08-12
-- **Status**: [APROVADO — 2026-08-12]
+- **Versão**: 0.3
+- **Data**: 2026-08-13
+- **Status**: [APROVADO — 2026-08-12 · revisado 2026-08-13]
 - **Domínio master**: US-03, US-04, US-05, US-06, US-09, US-21, US-40, US-41 (SPEC master v2.1 §4)
 
 ---
@@ -27,6 +27,7 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 | US-21 | Busca de materiais | Master v2.0 |
 | US-40 | Material do tipo Resumo (mapas mentais) | Master v2.1 |
 | US-41 | Impressão de material texto em PDF | Master v2.1 |
+| US-44 | Página pública de curso (sales page) | Master v2.5 |
 
 ---
 
@@ -79,6 +80,14 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 - Filtros: tipo, curso; ordenação: relevância, data.
 - Resultados: apenas materiais acessíveis ao aluno + amostras (R1–R12 aplicadas na consulta).
 
+### 3.8 Página pública de curso — sales page (US-44)
+- Rota pública `/cursos/[slug]` (SSG/ISR — SPEC-landing R-L6), derivada do curso publicado; sem login para visitar.
+- Exibe: nome, descrição, imagem, **grade resumida** (módulos com títulos de materiais e seus tipos — nunca conteúdo, R12), amostra do curso (R4) acessível para leitura, preço (venda única) ou badge "Incluído na assinatura".
+- CTAs: "Começar trial grátis" (SPEC-pagamentos P0-1), "Assinar e acessar" (âncora para a página de preços), "Comprar curso" (checkout — exige login, D-P2).
+- Avaliações aprovadas do curso (SPEC-comunidade §3.5): nota média + comentários visíveis publicamente.
+- SEO: meta tags, Open Graph e dados estruturados `Course` (SPEC-landing R-L6).
+- Rascunho e curso sem nenhum material publicado: página não existe (404) — nada de "curso vazio" público.
+
 ---
 
 ## 4. Regras Específicas do Domínio
@@ -93,6 +102,8 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 | C6 | Exclusão em cascata (curso→módulos→materiais) sempre com confirmação explícita. |
 | C7 | Tipo `resumo`: mesmo gating/status dos demais; renderização por cards de tópico. |
 | C8 | PDF de impressão: gerado sob demanda com gating (R12), sem cache persistente. |
+| C9 | Sales page (US-44): grade pública mostra apenas títulos/tipos — conteúdo nunca é enviado (R12), nem para visitante não autenticado. |
+| C10 | Curso sem nenhum material publicado não tem sales page pública (404). |
 
 ---
 
@@ -113,6 +124,11 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 **When** o aluno requisita o PDF do material
 **Then** nenhuma URL assinada é emitida (resposta de bloqueio, sem redirecionamento ao storage)
 
+### E2E-C4 — Sales page não vaza conteúdo
+**Given** curso publicado com materiais não-amostra e 1 amostra
+**When** visitante não autenticado acessa `/cursos/[slug]`
+**Then** vê grade com títulos/tipos, amostra legível e CTAs — e nenhuma requisição ao conteúdo dos demais materiais é possível (R12)
+
 ---
 
 ## 6. Decisões do Domínio
@@ -122,6 +138,7 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 | 2026-08-12 | Busca indexa conteúdo interno de PDFs (texto extraído no upload); falha de extração não bloqueia publicação |
 | 2026-08-12 | D-C5: resumo sem árvore complexa no MVP (blocos de tópicos + quadro sinóptico) |
 | 2026-08-12 | D-C6: PDF de impressão gerado sob demanda, sem cache persistente |
+| 2026-08-13 | Sales page por curso aprovada (L-A1/US-44): página pública derivada do curso, sem conteúdo (C9/C10) |
 
 ---
 
@@ -132,3 +149,4 @@ Definir o comportamento de estruturação de conteúdo (curso → módulo → ma
 | 0.1 | 2026-08-12 | Versão inicial para aprovação |
 | 0.2 | 2026-08-12 | Tipo `resumo`/mapa mental (US-40), impressão em PDF (US-41) |
 | 0.2 | 2026-08-12 | **APROVADA** — revisão de aplicabilidade concluída |
+| 0.3 | 2026-08-13 | **Sales page por curso (US-44)** — página pública `/cursos/[slug]` (§3.8, C9/C10, E2E-C4) |
