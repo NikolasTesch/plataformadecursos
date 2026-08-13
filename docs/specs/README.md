@@ -32,6 +32,7 @@ Regras:
 | 2026-08-12 | Domínios engajamento (`SPEC-engajamento.md`) e editais (`SPEC-editais.md`) adicionados (features P1/P2) |
 | 2026-08-12 | Domínio frontend (`SPEC-frontend.md`) adicionado — design system e UI |
 | 2026-08-13 | `SPEC-frontend.md` v0.2 **aprovada** — 14 specs de domínio aprovadas; única idealização restante: mobile |
+| 2026-08-13 | `SPEC-landing.md` v0.1 adicionada (landing de alta conversão) — [PENDENTE] |
 
 ## Informações úteis
 

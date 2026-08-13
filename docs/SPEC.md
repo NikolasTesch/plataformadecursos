@@ -1,6 +1,6 @@
 # SPEC — Plataforma de Estudos para Concursos
 
-- **Versão**: 2.3
+- **Versão**: 2.4
 - **Data**: 2026-08-13
 - **Status**: [APROVADA — contrato de implementação ativo]
 - **Formato**: Spec-Driven Development — declarativa, descreve **o que** o sistema deve fazer, nunca **como**. Cada comportamento é verificável e testável.
@@ -71,6 +71,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | Streak e meta diária de estudo | `SPEC-engajamento.md` | ✅ [APROVADO] |
 | Rastreamento de editais e concursos | `SPEC-editais.md` | ✅ [APROVADO] |
 | Design system e experiência de interface | `SPEC-frontend.md` | ✅ [APROVADO — 2026-08-13] |
+| Landing de alta conversão (rota `/`) | `SPEC-landing.md` | [PENDENTE] — proposta 2026-08-13 |
 | Mobile (app nativo) | `SPEC-mobile.md` | [IDEALIZAÇÃO] — não implementar |
 
 ### US-01 — Registro de aluno
@@ -438,3 +439,4 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | 2.1 | 2026-08-12 | Features de retenção/conversão: US-32 a US-43 (trial 7d, plano anual, Pix, streak/meta, relatório semanal, banco de erros, favoritas, modo prova, resumos, impressão PDF, rastreamento de editais, download ZIP). Novos domínios: engajamento, editais |
 | 2.2 | 2026-08-12 | Revisão de pendências: US-36 (relatório semanal) **removida**; T4 múltiplas trilhas ativas; busca indexa conteúdo de PDFs |
 | 2.3 | 2026-08-13 | Índice de specs (§4.1) sincronizado com o estado real (14 domínios [APROVADO], frontend aprovado em 2026-08-13); decisão aberta "nome do produto" resolvida → ConcursFoco |
+| 2.4 | 2026-08-13 | Novo domínio proposto: landing de alta conversão (`SPEC-landing.md` v0.1 [PENDENTE]) — índice §4.1 atualizado |
