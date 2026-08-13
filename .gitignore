@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Ambiente e segredos (nunca versionar)
+.env
+.env*.local
+.env*.production
+
+# Testes
+coverage/
+playwright-report/
+test-results/
+
+# Prisma (banco local)
+prisma/*.db
+prisma/*.db-journal
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ferramentas locais (não versionar)
+.codegraph/
+.omo/
