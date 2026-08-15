@@ -182,7 +182,9 @@ test("bloqueio revoga sessão ativa e nega re-login (E2E-A1)", async ({
     await page.fill("#login-email", ALUNO_EMAIL);
     await page.fill("#login-senha", ALUNO_SENHA);
     await page.getByRole("button", { name: "Entrar" }).click();
-    const alerta = page.getByRole("alert");
+    // Exclui o route-announcer do Next (`__next-route-announcer__` tem
+    // role="alert" e quebra o strict mode quando a hidratação está ativa).
+    const alerta = page.locator('[role="alert"]:not(#__next-route-announcer__)');
     await expect(alerta).toBeVisible();
     await expect(alerta).toContainText("conta suspensa");
     // Sem segunda tentativa: contas bloqueadas não registram falha (D33), mas
