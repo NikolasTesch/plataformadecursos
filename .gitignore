@@ -29,3 +29,11 @@ Thumbs.db
 # Ferramentas locais (não versionar)
 .codegraph/
 .omo/
+
+/src/generated/prisma
+
+# Skills instaladas pelo prisma init (tooling do Prisma 7)
+.agents/
+.claude/
+.windsurf/
+skills-lock.json

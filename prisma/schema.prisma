@@ -1,0 +1,617 @@
+// ConcursFoco — Schema Prisma (fonte: docs/modelo-de-dados.md v0.2)
+//
+// Convenções (modelo-de-dados.md:8, AGENTS.md §6):
+// - Nomes de tabelas e colunas em inglês, snake_case.
+// - IDs: UUID v4 via @default(uuid()) — DECISÃO 2026-08-15: UUID v7 (ordenação
+//   temporal) registrado como enhancement futuro, não implementado agora.
+// - Timestamps UTC: @default(now()) + @updatedAt onde o modelo indica.
+// - onDelete omitido = default Prisma (required → Restrict, optional → SetNull);
+//   Cascade apenas onde o modelo de dados explicita "(cascade)".
+// - Enums com os valores EXATOS do modelo de dados (pt-BR, snake_case).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================================================
+// §2.1 — Auth e Usuários (SPEC-auth.md)
+// ===========================================================================
+
+enum Role {
+  aluno
+  admin
+}
+
+model users {
+  id                    String    @id @default(uuid())
+  nome                  String // obrigatório, 2–120 chars (validar em serviço)
+  email                 String    @unique
+  senha_hash            String // argon2id
+  role                  Role      @default(aluno)
+  verificado_em         DateTime? // US-22
+  bloqueado             Boolean   @default(false) // US-20
+  consentimento_lgpd_em DateTime // obrigatório
+  trial_usado           Boolean   @default(false) // P0-1: 1 trial por usuário (decisão de schema, modelo-de-dados §2.6)
+  meta_diaria_minutos   Int       @default(30) // US-35
+  tokenVersion          Int       @default(0) // invalidação de sessão JWT em logout/segurança
+  criado_em             DateTime  @default(now())
+  atualizado_em         DateTime  @updatedAt
+
+  sessions            sessions[]
+  verification_tokens verification_tokens[]
+  user_progress       user_progress[]
+  notes               notes[]
+  attempts            attempts[]
+  favorites           favorites[]
+  simulado_attempts   simulado_attempts[]
+  certificates        certificates[]
+  entitlements        entitlements[]
+  purchases           purchases[]
+  user_trilhas        user_trilhas[]
+  user_concursos      user_concursos[]
+  flashcards          flashcards[]
+  comments            comments[]
+  course_reviews      course_reviews[]
+  notifications       notifications[]
+  study_activity      study_activity[]
+}
+
+// Mantida mesmo com estratégia JWT no S1: compatibilidade futura com
+// PrismaAdapter (Auth.js) e auditoria de sessões. Campos sessionToken/userId
+// com nomes compatíveis com o adapter (colunas em snake_case via @map).
+// Auth.js exigirá opções de modelo customizado no adapter (modelo `sessions`).
+model sessions {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         users    @relation(fields: [userId], references: [id])
+}
+
+model verification_tokens {
+  id        String    @id @default(uuid())
+  token     String // hash do token (A2: 1 uso — validar em serviço)
+  user_id   String
+  expira_em DateTime // 24h
+  usado_em  DateTime?
+  criado_em DateTime  @default(now())
+  user      users     @relation(fields: [user_id], references: [id])
+}
+
+// ===========================================================================
+// §2.2 — Conteúdo (SPEC-conteudo.md)
+// ===========================================================================
+
+model courses {
+  id                  String   @id @default(uuid())
+  nome                String
+  descricao           String?
+  imagem_url          String?
+  slug                String   @unique // imutável após 1º material publicado (C1)
+  incluido_assinatura Boolean  @default(false)
+  criado_em           DateTime @default(now())
+  atualizado_em       DateTime @updatedAt
+
+  modules        modules[]
+  simulados      simulados[]
+  certificates   certificates[]
+  course_reviews course_reviews[]
+  products       products[]
+}
+
+model modules {
+  id        String      @id @default(uuid())
+  course_id String
+  nome      String
+  ordem     Int
+  course    courses     @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  materials materials[]
+
+  @@unique([course_id, ordem])
+}
+
+enum MaterialTipo {
+  pdf
+  texto
+  video
+  questoes // bloco de questões
+  resumo // 5º tipo (P2)
+}
+
+enum MaterialStatus {
+  rascunho
+  publicado
+}
+
+enum VideoStatus {
+  processando
+  pronto
+  erro
+}
+
+model materials {
+  id                String         @id @default(uuid())
+  module_id         String
+  titulo            String
+  tipo              MaterialTipo
+  ordem             Int
+  status            MaterialStatus @default(rascunho)
+  publicado_em      DateTime?
+  amostra           Boolean        @default(false) // máx. 1 por curso — validado em serviço (R4/C2)
+  conteudo_html     String? // tipo texto/resumo
+  arquivo_key       String? // tipo pdf — chave no R2
+  video_provider_id String? // tipo video — Bunny Stream
+  video_status      VideoStatus?
+  video_erro        String?
+  criado_em         DateTime       @default(now())
+  atualizado_em     DateTime       @updatedAt
+
+  // `modulo` (não `module`): palavra reservada do Prisma 7 (syntax de modules)
+  modulo          modules           @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  questions       questions[]
+  user_progress   user_progress[]
+  notes           notes[]
+  comments        comments[]
+  flashcards      flashcards[]
+  material_edital material_edital[]
+
+  // ÍNDICE (R6) — ordem por módulo; NOTA: não é unique (modelo-de-dados §3)
+  @@index([module_id, ordem])
+}
+
+enum SimuladoStatus {
+  rascunho
+  publicado
+}
+
+model simulados {
+  id              String         @id @default(uuid())
+  curso_id        String
+  titulo          String
+  instrucoes      String?
+  duracao_minutos Int
+  status          SimuladoStatus @default(rascunho)
+  publicado_em    DateTime?
+  course          courses        @relation(fields: [curso_id], references: [id])
+
+  simulado_questions simulado_questions[]
+  simulado_attempts  simulado_attempts[]
+}
+
+model simulado_questions {
+  id          String    @id @default(uuid())
+  simulado_id String
+  question_id String
+  ordem       Int
+  simulado    simulados @relation(fields: [simulado_id], references: [id], onDelete: Cascade)
+  question    questions @relation(fields: [question_id], references: [id])
+
+  @@unique([simulado_id, question_id])
+}
+
+// ===========================================================================
+// §2.3 — Questões (SPEC-questoes.md)
+// ===========================================================================
+
+model questions {
+  id              String    @id @default(uuid())
+  material_id     String
+  enunciado       String
+  alternativas    Json      @db.JsonB // array [{letra, texto}] — ordem fixa (D-Q1)
+  gabarito        String // letra correta
+  comentario_html String? // sanitizado
+  ordem           Int
+  material        materials @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  attempts           attempts[]
+  favorites          favorites[]
+  simulado_questions simulado_questions[]
+  flashcards         flashcards[]
+}
+
+model attempts {
+  id                    String    @id @default(uuid())
+  user_id               String
+  question_id           String
+  alternativa_escolhida String
+  acerto                Boolean
+  criado_em             DateTime  @default(now())
+  user                  users     @relation(fields: [user_id], references: [id])
+  question              questions @relation(fields: [question_id], references: [id])
+
+  // banco de erros / histórico (modelo-de-dados §3)
+  @@index([user_id, question_id, criado_em(sort: Desc)])
+}
+
+model favorites {
+  user_id     String
+  question_id String
+  criado_em   DateTime  @default(now())
+  user        users     @relation(fields: [user_id], references: [id])
+  question    questions @relation(fields: [question_id], references: [id])
+
+  @@id([user_id, question_id])
+}
+
+enum SimuladoAttemptStatus {
+  em_andamento
+  entregue
+}
+
+model simulado_attempts {
+  id          String                @id @default(uuid())
+  user_id     String
+  simulado_id String
+  iniciado_em DateTime              @default(now())
+  entregue_em DateTime? // entrega automática preenche
+  respostas   Json                  @db.JsonB // questão → alternativa
+  nota        Decimal?
+  status      SimuladoAttemptStatus @default(em_andamento)
+  user        users                 @relation(fields: [user_id], references: [id])
+  simulado    simulados             @relation(fields: [simulado_id], references: [id])
+}
+
+// ===========================================================================
+// §2.4 — Vídeo (SPEC-video.md)
+//   Sem tabela própria: vídeo vive no Bunny Stream (V1). Coberto por
+//   materials.video_provider_id + materials.video_status. Posição de
+//   reprodução em user_progress.posicao_segundos (V4).
+// ===========================================================================
+
+// ===========================================================================
+// §2.5 — Área do aluno (SPEC-aluno.md)
+// ===========================================================================
+
+model user_progress {
+  id               String    @id @default(uuid())
+  user_id          String
+  material_id      String
+  concluido        Boolean   @default(false)
+  concluido_em     DateTime?
+  posicao_segundos Int       @default(0) // vídeo (V4)
+  atualizado_em    DateTime  @updatedAt // conflito offline: last-write-wins (AL5)
+  user             users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  material         materials @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, material_id])
+}
+
+model notes {
+  id            String    @id @default(uuid())
+  user_id       String
+  material_id   String
+  conteudo      String // ≤ 10.000 chars (validar em serviço)
+  criado_em     DateTime  @default(now())
+  atualizado_em DateTime  @updatedAt
+  user          users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  material      materials @relation(fields: [material_id], references: [id], onDelete: Cascade)
+}
+
+model certificates {
+  id        String   @id @default(uuid())
+  user_id   String
+  course_id String
+  codigo    String   @unique // UUID curto (US-29)
+  gerado_em DateTime @default(now())
+  user      users    @relation(fields: [user_id], references: [id])
+  course    courses  @relation(fields: [course_id], references: [id])
+
+  @@unique([user_id, course_id])
+}
+
+// ===========================================================================
+// §2.6 — Pagamentos (SPEC-pagamentos.md)
+// ===========================================================================
+
+enum ProductTipo {
+  assinatura
+  venda_unica
+}
+
+enum ProductStatus {
+  ativo
+  inativo
+}
+
+model products {
+  id                 String        @id @default(uuid())
+  tipo               ProductTipo
+  nome               String
+  preco_mensal_cents Int? // assinatura
+  preco_anual_cents  Int? // assinatura — configurável, default 10x mensal (2 meses grátis) (D-P1)
+  curso_id           String? // venda_unica (1:1 curso)
+  status             ProductStatus
+  course             courses?      @relation(fields: [curso_id], references: [id])
+
+  purchases    purchases[]
+  coupons      coupons[]
+  entitlements entitlements[]
+}
+
+enum PurchaseTipo {
+  checkout
+  trial
+}
+
+enum PurchaseStatus {
+  pendente
+  aprovado
+  recusado
+  reembolsado
+}
+
+model purchases {
+  id            String         @id @default(uuid())
+  user_id       String
+  product_id    String
+  mp_payment_id String         @unique
+  tipo          PurchaseTipo
+  status        PurchaseStatus
+  valor_cents   Int
+  coupon_id     String? // registra o uso do cupom (US-46)
+  criado_em     DateTime       @default(now())
+  atualizado_em DateTime       @updatedAt
+  user          users          @relation(fields: [user_id], references: [id])
+  product       products       @relation(fields: [product_id], references: [id])
+  coupon        coupons?       @relation(fields: [coupon_id], references: [id])
+}
+
+enum CouponTipo {
+  percentual
+  fixo
+}
+
+enum CouponEscopo {
+  assinatura
+  venda_unica
+}
+
+model coupons {
+  id            String       @id @default(uuid())
+  codigo        String       @unique // case-insensitive, ex.: "CONCURSO30" (validar em serviço)
+  tipo          CouponTipo
+  valor         Decimal // % (1–100) ou valor em R$ (centavos)
+  escopo        CouponEscopo
+  product_id    String? // null = vale para qualquer produto do escopo
+  valido_de     DateTime
+  valido_ate    DateTime
+  limite_uso    Int? // null = ilimitado
+  usos          Int          @default(0) // incrementado atomicamente no uso
+  ativo         Boolean      @default(true)
+  criado_em     DateTime     @default(now())
+  atualizado_em DateTime     @updatedAt
+  product       products?    @relation(fields: [product_id], references: [id])
+  purchases     purchases[]
+
+  // busca de cupons válidos no checkout (modelo-de-dados §3)
+  @@index([valido_ate, ativo])
+}
+
+enum EntitlementOrigem {
+  pagamento
+  trial
+  admin
+}
+
+model entitlements {
+  id            String            @id @default(uuid())
+  user_id       String
+  product_id    String
+  origem        EntitlementOrigem
+  acesso_ate    DateTime? // null = permanente (R3); trial: criado_em + 7 dias (P0-1)
+  criado_em     DateTime          @default(now())
+  atualizado_em DateTime          @updatedAt
+  user          users             @relation(fields: [user_id], references: [id])
+  product       products          @relation(fields: [product_id], references: [id])
+
+  // gating R1 (modelo-de-dados §3)
+  @@index([user_id, product_id])
+}
+
+// ===========================================================================
+// §2.7 — Trilhas e Editais (SPEC-trilhas.md, SPEC-editais.md)
+// ===========================================================================
+
+enum EditalStatus {
+  rascunho
+  publicado
+}
+
+model editals {
+  id                 String               @id @default(uuid())
+  nome               String
+  banca              String
+  data_prova         DateTime?            @db.Date
+  status             EditalStatus
+  versao             Int                  @default(1)
+  publicada_em       DateTime?
+  edital_disciplines edital_disciplines[]
+  material_edital    material_edital[]
+  user_trilhas       user_trilhas[]
+
+  // listagem de trilhas (modelo-de-dados §3)
+  @@index([status, publicada_em])
+}
+
+model edital_disciplines {
+  id              String            @id @default(uuid())
+  edital_id       String
+  nome            String
+  peso            Int
+  edital          editals           @relation(fields: [edital_id], references: [id], onDelete: Cascade)
+  material_edital material_edital[]
+
+  @@unique([edital_id, nome])
+}
+
+model material_edital {
+  material_id   String
+  edital_id     String
+  disciplina_id String // 0..1 disciplina por material (T1)
+  material      materials          @relation(fields: [material_id], references: [id])
+  edital        editals            @relation(fields: [edital_id], references: [id])
+  disciplina    edital_disciplines @relation(fields: [disciplina_id], references: [id])
+
+  @@id([material_id, edital_id])
+}
+
+model user_trilhas {
+  // DECISÃO 2026-08-15: modelo de dados define apenas unique(user_id, edital_id);
+  // Prisma/PostgreSQL exigem PK → id uuid surrogate adicionado (unique mantido).
+  id        String   @id @default(uuid())
+  user_id   String
+  edital_id String
+  ativo     Boolean
+  criado_em DateTime @default(now())
+  user      users    @relation(fields: [user_id], references: [id])
+  edital    editals  @relation(fields: [edital_id], references: [id])
+
+  // T4: múltiplas trilhas ativas permitidas — validar em serviço
+  @@unique([user_id, edital_id])
+}
+
+enum ConcursoOrigem {
+  manual
+  scraping
+}
+
+enum ConcursoStatus {
+  aberto
+  inscricoes
+  em_breve
+  encerrado
+}
+
+model concursos {
+  id               String           @id @default(uuid())
+  nome             String // ex.: "TRT-24 Técnico"
+  orgao            String
+  banca            String
+  origem           ConcursoOrigem // P0-3
+  fonte_url        String?
+  inscricao_inicio DateTime?        @db.Date
+  inscricao_fim    DateTime?        @db.Date
+  data_prova       DateTime?        @db.Date
+  status           ConcursoStatus // derivado das datas
+  ultimo_sync_em   DateTime? // scraping
+  user_concursos   user_concursos[]
+}
+
+model user_concursos {
+  user_id     String
+  concurso_id String
+  criado_em   DateTime  @default(now())
+  user        users     @relation(fields: [user_id], references: [id])
+  concurso    concursos @relation(fields: [concurso_id], references: [id])
+
+  @@id([user_id, concurso_id])
+}
+
+// ===========================================================================
+// §2.8 — Flashcards (SPEC-flashcards.md)
+// ===========================================================================
+
+model flashcards {
+  id              String     @id @default(uuid())
+  user_id         String
+  material_id     String? // origem sugestão
+  question_id     String? // origem sugestão
+  pergunta        String
+  resposta        String
+  nivel           Int // 0–5 (validar em serviço — Prisma não tem check constraint)
+  proxima_revisao DateTime   @db.Date
+  revisoes        Int
+  criado_em       DateTime   @default(now())
+  atualizado_em   DateTime   @updatedAt
+  user            users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  material        materials? @relation(fields: [material_id], references: [id])
+  question        questions? @relation(fields: [question_id], references: [id])
+}
+
+// ===========================================================================
+// §2.9 — Comunidade (SPEC-comunidade.md)
+// ===========================================================================
+
+model comments {
+  id             String    @id @default(uuid())
+  material_id    String
+  user_id        String
+  conteudo       String // ≤ 2.000 chars (validar em serviço)
+  respondido     Boolean   @default(false)
+  resposta_admin String?
+  criado_em      DateTime  @default(now())
+  atualizado_em  DateTime  @updatedAt
+  material       materials @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  user           users     @relation(fields: [user_id], references: [id])
+}
+
+enum ReviewStatus {
+  pendente
+  aprovado
+  oculta
+}
+
+model course_reviews {
+  id            String       @id @default(uuid())
+  course_id     String
+  user_id       String
+  nota          Int // 1–5 (validar em serviço)
+  comentario    String? // ≤ 500 chars, sanitizado
+  status        ReviewStatus @default(pendente)
+  criado_em     DateTime     @default(now())
+  atualizado_em DateTime     @updatedAt
+  course        courses      @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user          users        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // editar substitui (D-R1); nota média = avaliações `aprovado` (D-R2)
+  @@unique([course_id, user_id])
+  @@index([course_id, status]) // nota média e listagem na sales page
+}
+
+// ===========================================================================
+// §2.10 — Notificações e Engajamento (SPEC-notificacoes.md, SPEC-engajamento.md)
+// ===========================================================================
+
+// DECISÃO 2026-08-15: modelo de dados declara `tipo enum` sem valores; valores
+// abaixo derivados dos eventos do SPEC-notificacoes.md §3.1.
+enum NotificationTipo {
+  novo_material
+  assinatura_expirando
+  assinatura_expirada
+  resposta_comentario
+  verificacao_email
+  revisoes_pendentes
+}
+
+model notifications {
+  id               String           @id @default(uuid())
+  user_id          String
+  tipo             NotificationTipo
+  titulo           String
+  corpo            String
+  lida             Boolean          @default(false)
+  notification_key String           @unique // idempotência (N2): evento+usuário
+  criado_em        DateTime         @default(now())
+  user             users            @relation(fields: [user_id], references: [id])
+
+  // central in-app (modelo-de-dados §3)
+  @@index([user_id, criado_em(sort: Desc)])
+}
+
+model study_activity {
+  id                   String   @id @default(uuid())
+  user_id              String
+  dia                  DateTime @db.Date // UTC
+  minutos              Int      @default(0) // acumulado
+  materiais_concluidos Int      @default(0)
+  questoes_respondidas Int      @default(0)
+  user                 users    @relation(fields: [user_id], references: [id])
+
+  // upsert diário (pk composto no modelo; aqui unique + id surrogate)
+  @@unique([user_id, dia])
+}
