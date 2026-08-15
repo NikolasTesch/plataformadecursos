@@ -62,19 +62,19 @@ plataformadecursos/
 ├── README.md          # Visão geral do projeto (função, stack, como rodar)
 ├── docs/              # TODA a documentação (PRD, SPECs, decisões)
 │   ├── PRD.md         # Visão de produto (v2.3 [APROVADO])
-│   ├── SPEC.md        # Spec master — contrato global (US-01 a US-43, regras R1–R12)
-│   ├── DESIGN.md      # Direção visual e arte (v0.6 [PENDENTE DE APROVAÇÃO])
+│   ├── SPEC.md        # Spec master — contrato global (US-01 a US-48, regras R1–R12)
+│   ├── DESIGN.md      # Direção visual e arte (v0.7 [APROVADO])
 │   ├── modelo-de-dados.md   # Schema consolidado (base do Prisma no S1)
 │   ├── plano-de-implementacao.md  # Slices S1–S8 e ordem de entrega
 │   └── specs/         # Specs por domínio + STATUS-APROVACAO.md (checklist SDD)
-│       ├── SPEC-<dominio>.md   # 15 specs (13 [APROVADO], frontend [PENDENTE], mobile [IDEALIZAÇÃO])
+│       ├── SPEC-<dominio>.md   # 15 specs [APROVADO] + mobile [IDEALIZAÇÃO]
 │       └── STATUS-APROVACAO.md # Matriz de aprovação e decisões da revisão de pendências
-├── src/               # Código Next.js (App Router) — A CRIAR no S1
+├── src/               # Código Next.js (App Router) — criado em 2026-08-14 (estrutura + READMEs)
 │   ├── app/           # Rotas: / (landing), /admin/*, /app/* (aluno)
 │   ├── services/      # Lógica de negócio (NUNCA dentro de rotas)
 │   ├── lib/           # Infra: db, auth, storage, vídeo, pagamento
 │   └── components/    # UI
-└── prisma/            # Schema e migrations — A CRIAR no S1
+└── prisma/            # Schema e migrations — criado em 2026-08-14 (estrutura + READMEs)
 ```
 
 Cada pasta acima terá seu `README.md` ao ser criada.
@@ -138,12 +138,12 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 ### Estado atual do projeto (2026-08-13)
 
 - **Fase**: especificação **concluída** — implementação **NÃO iniciada** (não há `src/`, `prisma/` nem `package.json`).
-- **Documentação aprovada**: PRD v2.3 · SPEC master v2.2 · modelo-de-dados v0.1 · plano de implementação v0.1 (S1–S8) · **13 specs de domínio** `[APROVADO]` (`docs/specs/STATUS-APROVACAO.md`).
+- **Documentação aprovada**: PRD v2.3 · SPEC master v2.5 · modelo-de-dados v0.1 · plano de implementação v0.2 (S1–S8) · **15 specs de domínio aprovadas** (`docs/specs/STATUS-APROVACAO.md`).
 - **Documentação**: **15 specs de domínio aprovadas** (inclui `SPEC-frontend.md` v0.2 e `SPEC-landing.md` v0.2, aprovados em 2026-08-13). **Master v2.5**: novas US aprovadas em 2026-08-13 — US-44 (sales page), US-45/46 (cupons), US-47/48 (avaliações). Fora do escopo: `SPEC-mobile.md` ([IDEALIZAÇÃO]).
 - **Prototipagem**: concluída no **Pencil** (2026-08-13) — 63 telas (32 desktop + 31 mobile), versões dark (`D `), 3 bibliotecas de componentes, tokens duais light/dark documentados em `DESIGN.md` §12–13. Exportação de tokens → Tailwind ainda pendente.
 - **Marca**: **ConcursFoco** (nome decidido em 2026-08-13, PRD v2.3). Logo final ainda a explorar.
-- **Próximo slice**: **S1 — Fundação** (scaffold Next.js+TS, Prisma+Postgres via Docker, schema completo, Auth.js com roles, seed, lint/test) — já desbloqueado por `SPEC-auth.md` + `modelo-de-dados.md` + plano aprovados.
-- **Versionamento**: repositório git **ainda não inicializado** — iniciar antes do S1.
+- **Próximo slice**: estrutura de pastas + READMEs concluídos (2026-08-14); próximo: **S1 — Fundação** (scaffold Next.js+TS, Prisma+Postgres via Docker, schema completo, Auth.js com roles, seed, lint/test) — já desbloqueado por `SPEC-auth.md` + `modelo-de-dados.md` + plano aprovados.
+- **Versionamento**: repositório git **inicializado** (3 commits em `main`, 2026-08-13/14).
 
 ### Decisões técnicas vigentes
 
