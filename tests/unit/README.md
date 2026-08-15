@@ -20,4 +20,4 @@ Testes unitários da lógica de negócio com **Vitest**. Cobrem regras e cálcul
 
 - Comando: `npm run test` (AGENTS.md §9, a definir no S1).
 - Testes unitários obrigatórios para o motor de gating e progresso (AGENTS.md §6).
-- Cada slice entrega seus testes unitários junto com o código do motor de regra (docs/plano-de-implementacao.md:104).
+- Cada slice entrega seus testes unitários junto com o código do motor de regra ([docs/plano-de-implementacao.md](docs/plano-de-implementacao.md):104).

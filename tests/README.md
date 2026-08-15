@@ -26,4 +26,5 @@ tests/
 
 - Comandos (AGENTS.md §9, a definir no S1): `npm run test` (Vitest) e `npm run test:e2e` (Playwright).
 - Testes unitários são **obrigatórios** para o motor de gating (R1–R12) e para o cálculo de progresso (AGENTS.md §6).
-- Cada slice entrega testes junto com o código: testes unit do motor de regra primeiro, depois E2E (docs/plano-de-implementacao.md:104).
+- Cada slice entrega testes junto com o código: testes unit do motor de regra primeiro, depois E2E ([docs/plano-de-implementacao.md](docs/plano-de-implementacao.md):104).
+- Exemplos E2E da spec master (E2E-1..7) que o Playwright deve cobrir: [docs/SPEC.md](docs/SPEC.md):452.
