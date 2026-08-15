@@ -11,16 +11,87 @@ Next.js (App Router) + TypeScript · PostgreSQL · Prisma · Cloudflare R2 · Bu
 ## Estrutura
 
 ```
-├── AGENTS.md          # Regras de trabalho (SDD, documentação)
-├── docs/              # TODA a documentação
-│   ├── PRD.md         # Visão de produto (v2.3)
-│   ├── SPEC.md        # Spec master (contrato global, US-01 a US-43)
-│   ├── DESIGN.md      # Direção visual e arte (v0.7)
-│   ├── modelo-de-dados.md   # Schema consolidado (design de banco)
-│   ├── plano-de-implementacao.md  # Slices S1–S8 e ordem de entrega
-│   └── specs/         # Specs por domínio (15 arquivos)
-├── src/               # Código Next.js (app/, services/, lib/, components/) — A CRIAR no S1
-└── prisma/            # Schema e migrations — A CRIAR no S1
+├── docs/                 # TODA a documentação
+│   └── specs/            # Specs por domínio + STATUS-APROVACAO.md
+├── src/                  # Código Next.js (App Router)
+│   ├── app/              # Rotas (finas: parse → service → respond)
+│   │   ├── (landing)/    # Públicas sem prefixo de URL
+│   │   │   ├── precos/
+│   │   │   ├── sobre/
+│   │   │   ├── cursos/
+│   │   │   │   └── [slug]/
+│   │   │   └── checkout/
+│   │   ├── (auth)/       # Autenticação
+│   │   │   ├── login/
+│   │   │   ├── cadastro/
+│   │   │   └── verificar-email/
+│   │   │       └── [token]/
+│   │   ├── app/          # Área do aluno (/app/*)
+│   │   │   ├── cursos/
+│   │   │   │   └── [slug]/
+│   │   │   │       └── materiais/
+│   │   │   │           └── [id]/
+│   │   │   ├── questoes/
+│   │   │   ├── simulados/
+│   │   │   │   └── [id]/
+│   │   │   ├── flashcards/
+│   │   │   ├── trilhas/
+│   │   │   │   └── [editalId]/
+│   │   │   ├── concursos/
+│   │   │   │   └── [id]/
+│   │   │   ├── anotacoes/
+│   │   │   ├── configuracoes/
+│   │   │   └── notificacoes/
+│   │   ├── admin/        # Painel administrativo (/admin/*)
+│   │   │   ├── cursos/
+│   │   │   ├── materiais/
+│   │   │   ├── produtos/
+│   │   │   ├── cupons/
+│   │   │   ├── usuarios/
+│   │   │   ├── relatorios/
+│   │   │   ├── editais/
+│   │   │   ├── comentarios/
+│   │   │   └── landing/
+│   │   ├── verificar/    # Certificado público
+│   │   │   └── [codigo]/
+│   │   └── api/          # Route handlers finos
+│   ├── services/         # Lógica de negócio (nunca em rotas)
+│   │   ├── auth/
+│   │   ├── conteudo/
+│   │   ├── video/
+│   │   ├── questoes/
+│   │   ├── aluno/
+│   │   ├── gating/
+│   │   ├── pagamentos/
+│   │   ├── trilhas/
+│   │   ├── flashcards/
+│   │   ├── comunidade/
+│   │   ├── notificacoes/
+│   │   ├── engajamento/
+│   │   ├── editais/
+│   │   └── admin/
+│   ├── lib/              # Infra (consumida por services)
+│   │   ├── db/
+│   │   ├── auth/
+│   │   ├── storage/
+│   │   ├── video/
+│   │   ├── pagamento/
+│   │   ├── mail/
+│   │   ├── rate-limit/
+│   │   ├── sanitize/
+│   │   └── pdf/
+│   └── components/       # UI (sobre base shadcn em ui/)
+│       ├── ui/
+│       ├── landing/
+│       ├── auth/
+│       ├── app/
+│       ├── admin/
+│       └── player/
+├── prisma/               # Schema e migrations
+├── tests/                # unit (Vitest) + e2e (Playwright)
+│   ├── unit/
+│   └── e2e/
+└── public/               # Estáticos + PWA assets futuros
 ```
 
 ## Como rodar (a definir no S1)
@@ -35,14 +106,15 @@ Next.js (App Router) + TypeScript · PostgreSQL · Prisma · Cloudflare R2 · Bu
 | Documento | Conteúdo |
 |---|---|
 | [docs/PRD.md](docs/PRD.md) | Visão de produto, escopo, RNF, métricas |
-| [docs/SPEC.md](docs/SPEC.md) | Spec master: papéis, regras R1–R12, US-01–43, exemplos E2E |
+| [docs/SPEC.md](docs/SPEC.md) | Spec master: papéis, regras R1–R12, US-01–48, exemplos E2E |
 | [docs/DESIGN.md](docs/DESIGN.md) | Direção visual: paleta, tipografia, dark mode, prototipagem (63 telas) |
-| [docs/specs/](docs/specs/) | 14 specs de domínio aprovadas (auth, conteudo, video, questoes, aluno, pagamentos, admin, trilhas, flashcards, comunidade, notificacoes, engajamento, editais, frontend) + mobile (idealização) |
+| [docs/specs/](docs/specs/) | 15 specs de domínio aprovadas (auth, conteudo, video, questoes, aluno, pagamentos, admin, trilhas, flashcards, comunidade, notificacoes, engajamento, editais, frontend, landing) + mobile (idealização) |
 | [docs/modelo-de-dados.md](docs/modelo-de-dados.md) | Schema consolidado e decisões de banco |
 | [docs/plano-de-implementacao.md](docs/plano-de-implementacao.md) | Plano de slices S1–S8 |
 
 ## Status do projeto
 
-- Greenfield — documentação concluída em 2026-08-13 (PRD v2.3 · SPEC master v2.3 · 14 specs de domínio · DESIGN v0.7 — todos aprovados)
+- Greenfield — documentação concluída em 2026-08-13 (PRD v2.3 · SPEC master v2.5 · 15 specs de domínio aprovadas · DESIGN v0.7 — todos aprovados)
+- Estrutura de pastas criada + README por pasta (2026-08-14)
 - Fase atual: **especificação concluída** — implementação não iniciada (próximo slice: **S1 — Fundação**)
 - Marca: **ConcursFoco**
