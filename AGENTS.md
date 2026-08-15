@@ -124,10 +124,13 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 
 ---
 
-## 9. COMANDOS (a definir no S1)
+## 9. COMANDOS (definidos no S1)
 
 - `npm run dev` — ambiente de desenvolvimento
-- `npx prisma migrate dev` — migrations
+- `npm run build` / `npm run start` — produção local
+- `npm run lint` — ESLint
+- `npm run db:seed` — seed idempotente (admin + aluno demo)
+- `npx prisma migrate dev` — migrations (+ `npx prisma generate` — Prisma 7 não roda generate sozinho)
 - `npm run test` — testes unitários (Vitest)
 - `npm run test:e2e` — testes E2E (Playwright)
 
@@ -135,22 +138,30 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 
 ## 10. NOTAS
 
-### Estado atual do projeto (2026-08-13)
+### Estado atual do projeto (2026-08-15)
 
-- **Fase**: especificação **concluída** — implementação **NÃO iniciada** (não há `src/`, `prisma/` nem `package.json`).
+- **Fase**: implementação **iniciada** — **S1 — Fundação concluído** em 2026-08-15. Próximo slice: **S2 — Conteúdo**.
+- **S1 entregue (2026-08-15)**: scaffold **Next.js 16.3.1 + TypeScript** (temp-dir create-next-app, Tailwind v4, shadcn init); **PostgreSQL 16 via Docker** (host **5433** — 5432 ocupada); schema Prisma **30 models** + migration `20260815133031_init` aplicada; **seed idempotente** (admin + aluno demo, argon2id); **Auth.js v5 beta.32 split** (auth.config Edge-safe + auth.ts Node, JWT 30d/24h + tokenVersion, revogação A3); **middleware Edge-safe** com roles (`NextResponse.redirect`; Next 16 deprecou middleware→proxy); **services/auth** (registrar US-01, login US-02, logout, bloqueio US-20, erros `ErroAuth`); **rotas finas** `/login` e `/cadastro` (server actions + useActionState); **71 testes unitários + 2 specs E2E verdes** (auth + bloqueio).
+
+### Histórico do estado (2026-08-13/14, mantido)
+
+- **Fase (2026-08-13)**: especificação **concluída** — implementação **NÃO iniciada** (não havia `src/`, `prisma/` nem `package.json`).
 - **Documentação aprovada**: PRD v2.3 · SPEC master v2.5 · modelo-de-dados v0.1 · plano de implementação v0.2 (S1–S8) · **15 specs de domínio aprovadas** (`docs/specs/STATUS-APROVACAO.md`).
 - **Documentação**: **15 specs de domínio aprovadas** (inclui `SPEC-frontend.md` v0.2 e `SPEC-landing.md` v0.2, aprovados em 2026-08-13). **Master v2.5**: novas US aprovadas em 2026-08-13 — US-44 (sales page), US-45/46 (cupons), US-47/48 (avaliações). Fora do escopo: `SPEC-mobile.md` ([IDEALIZAÇÃO]).
 - **Prototipagem**: concluída no **Pencil** (2026-08-13) — 63 telas (32 desktop + 31 mobile), versões dark (`D `), 3 bibliotecas de componentes, tokens duais light/dark documentados em `DESIGN.md` §12–13. Exportação de tokens → Tailwind ainda pendente.
 - **Marca**: **ConcursFoco** (nome decidido em 2026-08-13, PRD v2.3). Logo final ainda a explorar.
-- **Próximo slice**: estrutura de pastas + READMEs concluídos (2026-08-14); próximo: **S1 — Fundação** (scaffold Next.js+TS, Prisma+Postgres via Docker, schema completo, Auth.js com roles, seed, lint/test) — já desbloqueado por `SPEC-auth.md` + `modelo-de-dados.md` + plano aprovados.
-- **Versionamento**: repositório git **inicializado** (3 commits em `main`, 2026-08-13/14).
+- **Estrutura de pastas + READMEs**: criada em 2026-08-14 (`src/`, `prisma/`, `tests/`, README em toda pasta).
+- **Versionamento**: repositório git **inicializado** (3 commits em `main`, 2026-08-13/14); desde então, commits por todo no `main` (S1 completo).
 
 ### Decisões técnicas vigentes
 
-- Banco de desenvolvimento: PostgreSQL local via Docker (decisão 2026-08-12).
+- Banco de desenvolvimento: PostgreSQL local via Docker (decisão 2026-08-12) — **porta host 5433** (5432 ocupada por outro projeto; container segue 5432).
+- Prisma **7** com generator `prisma-client` (output `src/generated/prisma`) + `prisma.config.ts`; driver adapter `@prisma/adapter-pg` obrigatório; `prisma migrate dev` não roda `generate` sozinho.
+- Senhas: **argon2** nativo (argon2id, pré-built) — seed e services/auth; hashes nunca logados (A1).
 - Vídeo: Bunny Stream (transcodificação HLS, player embutido).
 - Pagamento: Mercado Pago (Checkout Pro + webhooks idempotentes, cartão e Pix).
 - Decisões da revisão de pendências (21 itens) registradas em `docs/specs/STATUS-APROVACAO.md` §1.
+- Decisões de implementação do S1 (D1–D36) registradas em `.omo/notepads/s1-fundacao/decisions.md`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

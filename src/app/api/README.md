@@ -11,20 +11,20 @@ Raiz dos route handlers da aplicação (App Router). Nenhuma rota desta pasta re
 - **Webhooks**: validação de autenticidade (HMAC para Mercado Pago; assinatura/callback para Bunny) e idempotência antes de qualquer efeito colateral.
 
 ```
-src/app/api/            # Flat até o S1; subpastas criadas nos slices
+src/app/api/            # Flat exceto auth/ até o S1; demais subpastas criadas nos slices
 ├── README.md           # Este arquivo
-├── auth/[...nextauth]/ # S1 — rota padrão do Auth.js/NextAuth
+├── auth/[...nextauth]/ # IMPLEMENTADO no S1 (todo 7) — rota padrão do Auth.js/NextAuth
 ├── webhooks/           # S6 (pagamentos) e S5 (vídeo)
 ├── downloads/          # S3/S7 — download em lote (ZIP)
 ├── lgpd/               # S8 — exportação/exclusão de dados
 └── sync-offline/       # S3/S7 — sincronização de fila offline
 ```
 
-### Sub-rotas planejadas (enumeradas, NÃO criadas ainda)
+### Sub-rotas planejadas (enumeradas, NÃO criadas ainda — exceto `auth/[...nextauth]`)
 
 | Sub-rota | Finalidade | Slice | Fonte |
 |---|---|---|---|
-| `auth/[...nextauth]` | Handlers de autenticação (OAuth/session) — convenção padrão do Auth.js/NextAuth v5 | S1 | AGENTS.md §10 |
+| `auth/[...nextauth]` | **EXISTE** (S1): re-exporta `{ GET, POST }` de `NextAuth(auth)` — handlers de autenticação do Auth.js v5 | S1 ✓ | todo 7 |
 | `webhooks/pagamentos` | Callbacks do Mercado Pago: validação HMAC, eventos de pagamento/assinatura, idempotência por `payment_id`/`subscription_id` | S6 | SPEC-pagamentos.md:59-67 |
 | `webhooks/video` | Callback de transcodificação do Bunny: atualiza estado do material (`processando` → `pronto`/`erro`) | S5 | SPEC-video.md:34 |
 | `downloads` | Download em lote de curso (ZIP), URL assinada com validade de 24h, gating na solicitação e no download | S3/S7 | SPEC-aluno.md:76-77 |
@@ -37,6 +37,7 @@ src/app/api/            # Flat até o S1; subpastas criadas nos slices
 |---|---|
 | 2026-08-14 | Pasta `api/` fica **flat até o S1**: as sub-rotas são documentadas no README, mas as subpastas só serão criadas no slice de cada domínio (evita árvore vazia e estrutura morta) |
 | 2026-08-14 | Todas as rotas seguem `parse → service → respond`; webhooks validam HMAC/assinatura e idempotência antes de processar |
+| 2026-08-15 | `auth/[...nextauth]/route.ts` criado (todo 7): `NextAuth(auth)` de `src/lib/auth/auth.ts` re-exportado como `GET`/`POST` — única subrota real no S1, o resto da árvore permanece flat até os slices de cada domínio |
 
 ## Informações úteis
 

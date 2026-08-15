@@ -10,7 +10,7 @@ Rotas da área do aluno do ConcursFoco. Esta é uma **pasta literal** (não é r
 src/app/app/
 ├── README.md                    # Este arquivo
 ├── layout.tsx                   # app-shell do aluno (a criar no S2)
-├── page.tsx                     # Home do aluno (US-11) — streak + cursos com % progresso
+├── page.tsx                     # STUB no S1 (todo 13): autentica (auth()) + verificarSessaoValida → placeholder
 ├── cursos/                      # Lista de cursos do aluno + página do curso + materiais
 ├── questoes/                    # Blocos de questões (modo estudo/prova), erros, favoritas
 ├── simulados/                   # Lista + execução de simulados
@@ -37,6 +37,7 @@ O **app-shell** (SPEC-frontend.md:97-100):
 | 2026-08-14 | `layout.tsx` do app-shell vive neste segmento (SPEC-frontend.md:97-100) — todas as rotas do aluno herdam sidebar/topbar/bottom-nav |
 | 2026-08-14 | Home do aluno (US-11) mostra cursos com % de progresso; cursos sem material publicado ficam ocultos (R5, SPEC-aluno.md:33) |
 | 2026-08-14 | O segmento `materiais/[id]` tem layout próprio de leitura imersiva (player), sem sidebar de app — ver `cursos/[slug]/materiais/[id]/README.md` |
+| 2026-08-15 | `page.tsx` stub do S1: `auth()` + `verificarSessaoValida()` (enforcement A3 em Node) antes do placeholder — valida o fluxo protegido E2E-A1; a home real (US-11) e o app-shell (`layout.tsx`) entram no S2 |
 
 ## Informações úteis
 

@@ -6,14 +6,21 @@ Página pública `/cadastro` que cria a conta do aluno (US-01, SPEC-auth.md §3.
 
 ## Arquitetura
 
-Rota de cadastro no group `(auth)` (SPEC-frontend.md:81): layout **auth** centralizado, card único. **Consentimento LGPD em destaque** no formulário (SPEC-frontend.md:95, SPEC-auth.md §3.1 e regra A5) — campo obrigatório, explícito. A página é fina: valida a entrada, chama `src/services/auth` (que persiste o usuário via `src/lib/db` e dispara o email de verificação via `src/lib/mail`), com proteção de `src/lib/rate-limit`.
+Rota de cadastro no group `(auth)` (SPEC-frontend.md:81): layout **auth** centralizado, card único — **implementada no S1** (todo 13) como rota fina:
 
 ```
-page.tsx (fina) → services/auth (lógica) → lib/db (persistência) + lib/mail (verificação) + lib/rate-limit
+src/app/(auth)/cadastro/
+├── page.tsx           # Server Component: renderiza o form
+├── actions.ts         # Server Action "use server": headers() (IP) → services/auth → signIn
+└── cadastro-form.tsx  # Client Component: useActionState + EstadoCadastro + seletores estáveis
 ```
+
+Padrão do fluxo: **server action → service → signIn** — a action chama `registrar()` de `src/services/auth` (validações → unicidade → argon2 → create) e, em sucesso, `signIn("credentials")` com redirect para `/app`. Erros `ErroAuth` (code `validacao` com `campo` "email", etc.) viram estado serializável do `useActionState`. **Consentimento LGPD em destaque** no formulário (SPEC-frontend.md:95, SPEC-auth.md §3.1 e regra A5) — campo obrigatório, explícito.
 
 - Senhas: hash argon2id, nunca logadas ou retornadas (regra A1).
-- Email duplicado: mensagem amigável, sem revelar existência da conta em fluxos de recuperação (SPEC-auth.md:32).
+- Email duplicado: `ErroAuth` code `validacao`/campo `email` — o registro é o único fluxo que legitima a revelação (SPEC-auth.md:32).
+- Rate limit de registro: 10/hora por IP (`registroLimiter`, A4).
+- IP em server action: `await headers()` (async no Next 16), `x-forwarded-for` primeiro valor ou `'unknown'`.
 
 ## Decisões tomadas
 
@@ -22,6 +29,8 @@ page.tsx (fina) → services/auth (lógica) → lib/db (persistência) + lib/mai
 | 2026-08-14 | Rota documentada antes do código, conforme fluxo SDD (AGENTS.md §2) |
 | 2026-08-14 | Rate limit de registro no serviço: 10/hora por IP (SPEC-auth.md:38, regra A4) |
 | 2026-08-14 | Consentimento LGPD obrigatório e em destaque no cadastro (regra A5) — decisão já vigente na spec aprovada |
+| 2026-08-15 | Página implementada (todo 13): server action → `services/auth` → `signIn`; mesmo padrão de forms do login (PLAIN + `useActionState`) |
+| 2026-08-15 | Seletores estáveis para E2E: `#cadastro-nome`, `#cadastro-email`, `#cadastro-senha`, `#cadastro-lgpd` |
 
 ## Informações úteis
 
@@ -31,3 +40,5 @@ page.tsx (fina) → services/auth (lógica) → lib/db (persistência) + lib/mai
 - [docs/modelo-de-dados.md](docs/modelo-de-dados.md) §2.1 — tabelas do domínio de autenticação
 - [docs/plano-de-implementacao.md](docs/plano-de-implementacao.md) — auth no slice S1
 - [AGENTS.md](AGENTS.md) §6 — rotas finas; lógica de negócio em `src/services/`
+- E2E: `tests/e2e/auth.spec.ts` cobre registro→login→logout com estes seletores.
+- NOTA (S1): o email de verificação (US-22) **não é disparado no cadastro ainda** — o registro cria a sessão e redireciona para `/app`; o disparo entra no S8.
