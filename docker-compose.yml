@@ -1,7 +1,7 @@
 # ConcursFoco — Infraestrutura de desenvolvimento
 # Banco de desenvolvimento: PostgreSQL local via Docker (decisão 2026-08-12, AGENTS.md §10)
 #
-# NOTA (2026-08-14): porta HOST 5433 (e não 5432) porque 5432 já é usada pelo
+# NOTA (2026-08-15): porta HOST 5433 (e não 5432) porque 5432 já é usada pelo
 # container `grupopromo-postgres` de outro projeto local. Dentro da rede Docker
 # o Postgres continua na porta 5432 — só o mapeamento para o host difere.
 # DATABASE_URL correspondente: postgresql://concursfoco:concursfoco@localhost:5433/concursfoco
