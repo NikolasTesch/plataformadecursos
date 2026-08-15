@@ -10,13 +10,15 @@
 // Códigos cobertos por este todo (todo 2 — cursos, US-03): validacao,
 // nao_encontrado, slug_duplicado, slug_imutavel (C1), confirmacao_necessaria
 // (C6). Todos paralelos (3: módulos, 4: materiais) podem ADICIONAR códigos ao
-// union de forma aditiva, sem alterar os existentes.
+// union de forma aditiva, sem alterar os existentes. Todo 4 (materiais, US-05/06/
+// 09/40) adiciona `regra_negocio` (C2 amostra única por curso e R11 vídeo erro).
 export type CodigoErroConteudo =
   | "validacao"
   | "nao_encontrado"
   | "slug_duplicado"
   | "slug_imutavel"
-  | "confirmacao_necessaria";
+  | "confirmacao_necessaria"
+  | "regra_negocio";
 
 export interface ParamsErroConteudo {
   code: CodigoErroConteudo;
