@@ -10,12 +10,19 @@
 // - Enums com os valores EXATOS do modelo de dados (pt-BR, snake_case).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  // postgresqlExtensions: necessário mesmo no Prisma 7.9.1 (verificado via prisma validate
+  // 2026-08-15 — extensão ainda NÃO é GA; sem ele, P1012 em `datasource.extensions`)
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  // pg_trgm (busca de materiais, S2): suporte GA no Prisma 7 (sem previewFeatures);
+  // sem versão fixa — CREATE EXTENSION usa a default do PostgreSQL 16 (pg_trgm 1.6).
+  // O usuário concursfoco é owner do banco, então pode criar a extensão (sem superuser).
+  extensions = [pg_trgm]
 }
 
 // ===========================================================================
@@ -148,6 +155,10 @@ model materials {
   video_provider_id String? // tipo video — Bunny Stream
   video_status      VideoStatus?
   video_erro        String?
+  // Busca (S2, R7/R8): texto puro lowercased p/ ILIKE — titulo + corpo (texto/resumo) +
+  // texto extraído de PDF. NULL para video/questoes (sem corpo pesquisável).
+  // Populado pelo serviço de conteúdo (todo 4) — nunca escrito pelo cliente.
+  conteudo_busca    String?
   criado_em         DateTime       @default(now())
   atualizado_em     DateTime       @updatedAt
 
@@ -162,6 +173,8 @@ model materials {
 
   // ÍNDICE (R6) — ordem por módulo; NOTA: não é unique (modelo-de-dados §3)
   @@index([module_id, ordem])
+  // Busca (S2): GIN trigram p/ ILIKE '%termo%' em conteudo_busca (requer pg_trgm)
+  @@index([conteudo_busca(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 enum SimuladoStatus {
