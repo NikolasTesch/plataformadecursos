@@ -10,6 +10,7 @@ CRUD de materiais de estudo (URL `/admin/materiais`), de uso exclusivo do admin.
 - Rotas finas: `page.tsx` server carrega o material (`obterMaterial`) e o breadcrumb via serviços (`cursos/_dados.ts`); `actions.ts` contém as server actions (requireRole + parse + service + respond) — TODAS as regras (estrutura por tipo, C2 amostra única, R11 vídeo erro, R5 despublicação) vivem em `src/services/conteudo/materiais`.
 - Upload de PDF: **presigned direct** — a action `criarPresignUploadAction` pede a URL pré-assinada ao storage (`getStorage().createPresignedUpload`, fluxo documentado no README de `src/lib/storage`), o client faz PUT direto na URL (bytes nunca passam pelo servidor) e guarda a `arquivo_key` no material. Em dev sem credenciais R2, o stub responde em `http://127.0.0.1:3000/stub-storage/{key}` — o PUT é recebido pela rota `src/app/api/stub-storage/[...key]` (somente modo stub, admin-gated) e persistido localmente via `StubStorageDriver.salvarArquivo` (fluxo completo documentado no notepad s2-conteudo).
 - Formulário client `material-form.tsx` adaptado por tipo; publicar/despublicar são ações explícitas (`publicarMaterialAction`/`despublicarMaterialAction` — R5 imediato); o status do select só é enviado quando muda (um save comum nunca publica/despublica por acidente).
+- Após criar/atualizar um PDF, a server action dispara a indexação de texto no serviço de conteúdo. A indexação usa a leitura server-side do storage e falha de parser é degradada para busca por título, sem bloquear o restante da action.
 
 ```
 src/app/admin/materiais/
@@ -31,6 +32,7 @@ src/app/admin/materiais/
 | 2026-08-15 | S2 todo 12: formulário por tipo (texto/resumo = textarea HTML simples; editor rich-text completo é slice de frontend), pdf com presigned upload end-to-end no stub, video estrutural (S5), questoes aviso (S4); C2 exibido como alerta vindo do `ErroConteudo` |
 | 2026-08-15 | Chave do PDF: `materials/{cursoId}/{id}.pdf` — na criação usa uuid provisório gerado no client (o material ainda não existe); na edição usa o id real (fluxo documentado no notepad) |
 | 2026-08-15 | Magic bytes + limite 100MB validados no CLIENTE antes do PUT (espelho UX de C3) e novamente no servidor: limite no presign (driver) e magic bytes na rota stub (dev) |
+| 2026-08-17 | S2 todo 11: indexação pós-upload via `pdf-parse`; falha registrada e não bloqueante; `conteudo_busca` mantém título como fallback |
 
 ## Informações úteis
 

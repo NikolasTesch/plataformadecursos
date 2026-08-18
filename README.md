@@ -117,8 +117,8 @@ npm run dev
 
 # 6. Qualidade e testes
 npm run lint                  # ESLint
-npm run test                  # testes unitários (Vitest — 71 testes no S1)
-npm run test:e2e              # testes E2E (Playwright — 2 specs no S1)
+npm run test                  # testes unitários (Vitest — 292 testes)
+npm run test:e2e              # testes E2E (Playwright — 6 testes)
 
 # Produção local
 npm run build && npm run start
@@ -141,6 +141,7 @@ Scripts definidos em `package.json`; detalhes por pasta nos READMEs (ex.: `prism
 
 - Greenfield — documentação concluída em 2026-08-13 (PRD v2.3 · SPEC master v2.5 · 15 specs de domínio aprovadas · DESIGN v0.7 — todos aprovados)
 - Estrutura de pastas criada + README por pasta (2026-08-14)
-- **S1 — Fundação concluído (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models + migration init aplicada, seed idempotente, Auth.js v5 split (JWT + tokenVersion, revogação A3), middleware Edge-safe com roles, services/auth (US-01/02/bloqueio), 71 testes unitários + 2 specs E2E verdes
-- Fase atual: **implementação em andamento** — próximo slice: **S2 — Conteúdo**
+- **S1 — Fundação concluído (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, middleware com roles e services/auth.
+- **S2 — Conteúdo concluído (2026-08-17)**: CRUD/publicação de conteúdo, R2/stub, sanitização, gating mínimo, leitura/impressão PDF, busca com indexação PDF, admin UI, sales page US-44, 292 testes unitários e 6 E2E verdes.
+- Fase atual: **próximo slice: S3 — Área do aluno core**
 - Marca: **ConcursFoco**

@@ -26,7 +26,7 @@
 // (todo 7/9 implementam o gating; esta lib apenas documenta o contrato no método).
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -118,6 +118,9 @@ export type StorageDriver = {
    * método apenas para materiais autorizados.
    */
   createSignedUrl(key: string): Promise<string>;
+
+  /** Lê bytes no servidor para processamento pós-upload (ex.: indexação PDF). */
+  lerArquivo?: (key: string) => Promise<Uint8Array>;
 };
 
 /**
@@ -190,6 +193,14 @@ export class R2StorageDriver implements StorageDriver {
       { expiresIn: URL_ASSINADA_TTL_SECONDS },
     );
   }
+
+  async lerArquivo(key: string): Promise<Uint8Array> {
+    const resposta = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    if (!resposta.Body) throw new Error("objeto do storage sem corpo");
+    return resposta.Body.transformToByteArray();
+  }
 }
 
 /**
@@ -244,6 +255,10 @@ export class StubStorageDriver implements StorageDriver {
     await mkdir(dirname(caminho), { recursive: true });
     await writeFile(caminho, buffer);
     return caminho;
+  }
+
+  async lerArquivo(key: string): Promise<Uint8Array> {
+    return readFile(join(this.dir, key));
   }
 }
 

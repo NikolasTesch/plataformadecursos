@@ -9,11 +9,11 @@ Rota `/app/cursos`: listagem dos cursos disponíveis para o aluno, com percentua
 ```
 src/app/app/cursos/
 ├── README.md          # Este arquivo
-├── page.tsx           # Lista de cursos (a criar no S2)
+├── page.tsx           # Lista de cursos (S2)
 └── [slug]/            # Página do curso (ver README em [slug])
 ```
 
-Fluxo: a página chama o service de cursos/aluno em `src/services/` para obter a lista de cursos publicados e acessíveis, com o progresso calculado (concluídos ÷ publicados acessíveis, SPEC-aluno.md:50). O gating R5 oculta cursos sem material publicado. Cada card navega para `/app/cursos/{slug}`.
+Fluxo: a página chama o service de cursos/aluno em `src/services/` para obter a lista de cursos publicados. O gating R5 oculta cursos sem material publicado; progresso fica para S3. Cada card navega para `/app/cursos/{slug}`.
 
 ## Decisões tomadas
 
@@ -21,6 +21,7 @@ Fluxo: a página chama o service de cursos/aluno em `src/services/` para obter a
 |---|---|
 | 2026-08-14 | Lista de cursos com % de progresso exibido (SPEC-aluno.md:33,:51) — o aluno vê onde parou em cada curso |
 | 2026-08-14 | Cursos sem material publicado ficam ocultos (R5) — não aparecem como "vazios" na lista |
+| 2026-08-17 | S2 entrega a árvore e os estados de acesso; percentual de progresso será implementado no S3 |
 
 ## Informações úteis
 

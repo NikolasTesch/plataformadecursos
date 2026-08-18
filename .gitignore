@@ -29,6 +29,7 @@ Thumbs.db
 # Ferramentas locais (não versionar)
 .codegraph/
 .omo/
+.opencode/
 
 /src/generated/prisma
 

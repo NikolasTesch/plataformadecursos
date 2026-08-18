@@ -26,3 +26,9 @@ Regras de negócio do domínio de conteúdo: CRUD de cursos, módulos e materiai
 - Modelo de dados: [docs/modelo-de-dados.md](docs/modelo-de-dados.md) §2.2 (inclui `simulados` como entidade própria — Q4).
 - Slices: S2 — Conteúdo (CRUD, publicação, amostras, sales page) e S8 — busca com indexação de PDFs (plano-de-implementacao.md:36-43, :93).
 - Sales page (US-44): expõe só a grade resumida e a amostra, nunca o conteúdo (R12, SPEC-conteudo.md:83-89).
+
+## PDF pós-upload (S2 todo 11)
+
+- `pdf-extracao.ts` lê o objeto já persistido, extrai texto com `pdf-parse`, normaliza espaços/caixa e atualiza `materials.conteudo_busca` com `titulo + texto`.
+- A action de criação/edição chama a indexação depois de persistir o material. O resultado `falhou` é registrado com `materialId`, sem lançar: o título continua pesquisável e a publicação segue normalmente.
+- O parser é injetável nos testes; a dependência de leitura do storage também é injetável, mantendo a regra de negócio fora das rotas.

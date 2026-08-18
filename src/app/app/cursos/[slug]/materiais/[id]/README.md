@@ -9,11 +9,11 @@ Rota `/app/cursos/{slug}/materiais/{id}`: leitura/visualização de um material 
 ```
 src/app/app/cursos/[slug]/materiais/[id]/
 ├── README.md          # Este arquivo
-├── layout.tsx         # Layout player: 72ch central + barra lateral contextual (a criar no S2)
-└── page.tsx           # Renderização do material (pdf/texto/video/questoes) (a criar no S2)
+├── layout.tsx         # Layout player: 72ch central + barra lateral contextual
+└── page.tsx           # Renderização gated do material (S2)
 ```
 
-Fluxo: o `layout.tsx` deste segmento substitui o app-shell para a leitura (SPEC-frontend.md:104) — o conteúdo é o foco, com navegação lateral contextual dos demais materiais do curso. A `page.tsx` chama o service de conteúdo para renderizar o material conforme o tipo, avaliando o gating no servidor (R12: bloqueio não entrega nenhum conteúdo). Anotações por material (US-15) e progresso (conclusão manual ou automática de vídeo) são manipulados daqui.
+Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (R12: bloqueio não entrega conteúdo). S2 renderiza texto/resumo sanitizados e PDF via URL assinada/impressão gated; vídeo, questões, anotações e progresso ficam nos slices correspondentes.
 
 ## Decisões tomadas
 
@@ -23,6 +23,7 @@ Fluxo: o `layout.tsx` deste segmento substitui o app-shell para a leitura (SPEC-
 | 2026-08-14 | Conteúdo central com largura máxima de 72ch — legibilidade em leitura longa (SPEC-frontend.md:104) |
 | 2026-08-14 | URL limpa `/app/cursos/{slug}/materiais/{id}` (SPEC-aluno.md:36) — o `id` é o do material, sem parâmetros extras |
 | 2026-08-14 | Gating avaliado a cada requisição de conteúdo (SPEC-aluno.md:38-44); bloqueio devolve zero conteúdo (R12) |
+| 2026-08-17 | S2 implementa leitura/impressão de texto, resumo e PDF; o gating completo R1-R12 será substituído no S3 |
 
 ## Informações úteis
 

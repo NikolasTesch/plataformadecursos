@@ -11,7 +11,8 @@ Acesso ao **Cloudflare R2** para armazenamento de arquivos da plataforma, princi
   - **`R2StorageDriver`** — driver real (@aws-sdk/client-s3 contra R2, S3-compatible): `region: "auto"`, `forcePathStyle: true`, endpoint de `R2_ENDPOINT` ou derivado de `R2_ACCOUNT_ID` (`https://<accountid>.r2.cloudflarestorage.com`), credenciais de `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`, bucket de `R2_BUCKET`.
   - **`StubStorageDriver`** — driver stub (dev/CI): URLs deriváveis `http://127.0.0.1:3000/stub-storage/{key}`, registro do "objeto" e bytes persistidos em `tmpdir/concursfoco-stub-storage` (extensão `salvarArquivo(key, buffer)` para dev/E2E que precisam do conteúdo real).
   - **`criarStorage()`** — factory: `STORAGE_DRIVER=r2` → R2 (credenciais ausentes = erro claro `ErroStorage`, nunca fallback silencioso); `STORAGE_DRIVER=stub` → stub (override explícito); não definido → credenciais R2 presentes ? r2 : stub (fallback documentado, decisão 3 do plano).
-  - **`getStorage()`** — singleton lazy (padrão do projeto, ver `src/lib/db.ts`).
+- **`getStorage()`** — singleton lazy (padrão do projeto, ver `src/lib/db.ts`).
+  - **`lerArquivo(key)`** (opcional no contrato) — leitura server-side do objeto já enviado, usada somente pela indexação pós-upload de PDF; não altera o fluxo presigned direct.
   - **`validarArquivoPdf(buffer)` / `validarUploadPdf(buffer, size)` / `MAX_PDF_BYTES`** — validação C3 por **magic bytes** (`%PDF-` nos primeiros 1024 bytes, ISO 32000-1) e limite de 100MB.
 - Upload de PDF: MIME verificado por magic bytes (não só extensão), máx. 100MB, chave `materials/{courseId}/{materialId}.pdf` (SPEC-conteudo.md US-05).
 - **URL assinada (C5)**: a cada abertura autorizada (R7, R12), o servidor gera uma URL assinada com **validade exata de 10 minutos (600s)**; o download direto não é exposto (SPEC-conteudo.md:49).
@@ -22,6 +23,7 @@ Acesso ao **Cloudflare R2** para armazenamento de arquivos da plataforma, princi
 1. O chamador (cliente/rota de admin) valida o arquivo com `validarUploadPdf(buffer, size)` **antes** de pedir o presign — o servidor nunca recebe os bytes (contrato C3).
 2. A rota chama `createPresignedUpload({key, mimeType, size})` — o driver rejeita `size > 100MB` (C3) e devolve uma URL de upload válida por 10 min.
 3. O cliente faz PUT direto na URL (R2). O `materials.arquivo_key` recebe a chave.
+4. Após a persistência do material, o serviço de conteúdo pode ler a chave no storage para indexação; falha de leitura/parser não bloqueia a publicação.
 
 ### Fluxo da leitura (gating + signed URL)
 

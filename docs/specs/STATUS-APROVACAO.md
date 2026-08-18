@@ -65,7 +65,7 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 | Doc | Versão | Conteúdo | Status |
 |---|---|---|---|
 | `../modelo-de-dados.md` | 0.1 | Schema consolidado (base do Prisma no S1) | ✅ [APROVADO] |
-| `../plano-de-implementacao.md` | 0.1 | Slices S1–S8 | ✅ [APROVADO] |
+| `../plano-de-implementacao.md` | 0.2 | Slices S1–S8 | ✅ [APROVADO] |
 | `../DESIGN.md` | 0.7 | Direção visual e arte (prototipagem Pencil, dark mode) | ✅ [APROVADO — 2026-08-13] |
 
 ---
@@ -82,7 +82,7 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 
 ## 5. Como aprovar
 
-- ~~Em lote / parcial / com ajuste~~ — **todas as 14 specs de domínio + 3 documentos de apoio aprovados** (13 domínios + plano/modelo em 2026-08-12; frontend + DESIGN em 2026-08-13). Implementação ainda NÃO iniciada (aguardando ordem do usuário).
+- ~~Em lote / parcial / com ajuste~~ — **todas as 15 specs de domínio + 3 documentos de apoio aprovados**. Implementação em andamento; S1 concluído em 2026-08-15 e S2 concluído em 2026-08-17. Próximo slice: S3 — Área do aluno core.
 
 ---
 

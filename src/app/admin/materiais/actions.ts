@@ -23,6 +23,7 @@ import {
   despublicarMaterial,
   publicarMaterial,
 } from "@/services/conteudo/materiais";
+import { indexarPdfMaterial } from "@/services/conteudo/pdf-extracao";
 import type { MaterialStatus, MaterialTipo, VideoStatus } from "@/generated/prisma/client";
 
 /** Erro serializável exibido pela UI (shape do ErroConteudo, sem a instância). */
@@ -127,6 +128,25 @@ function parseCamposComuns(formData: FormData): CamposComuns {
   };
 }
 
+async function indexarPdfSeDisponivel(
+  materialId: string,
+  tipo: MaterialTipo,
+  arquivoKey: string | undefined,
+): Promise<void> {
+  if (tipo !== "pdf" || arquivoKey === undefined || arquivoKey === "") return;
+  try {
+    const storage = getStorage();
+    await indexarPdfMaterial(materialId, arquivoKey, {
+      lerArquivo: storage.lerArquivo?.bind(storage),
+    });
+  } catch (erro) {
+    console.warn(
+      "[admin/materiais] falha na indexação PDF",
+      erro instanceof Error ? erro.message : "erro_desconhecido",
+    );
+  }
+}
+
 export async function criarMaterialAction(
   _prevState: EstadoMaterial,
   formData: FormData,
@@ -161,6 +181,7 @@ export async function criarMaterialAction(
   revalidatePath("/admin/cursos/[id]");
   // Continua na edição do material (publicar, ajustar, etc.). FORA do
   // try/catch: redirect() lança NEXT_REDIRECT, que não pode ser engolido.
+  await indexarPdfSeDisponivel(material.id, tipo, c.arquivo_key);
   redirect(`/admin/materiais/${material.id}`);
 }
 
@@ -195,6 +216,7 @@ export async function atualizarMaterialAction(
 
   revalidatePath(`/admin/materiais/${id}`);
   revalidatePath("/admin/cursos/[id]");
+  await indexarPdfSeDisponivel(id, tipo, c.arquivo_key);
   return { ok: true };
 }
 

@@ -15,7 +15,8 @@ Página pública de venda do curso em `/cursos/[slug]` (sales page, US-44). Exib
 
 | Data | Decisão |
 |---|---|
-| 2026-08-14 | Rota dinâmica criada antes do código (estrutura + README); página real nos slices S2/S3 |
+| 2026-08-14 | Rota dinâmica criada antes do código (estrutura + README) |
+| 2026-08-17 | Sales page US-44 implementada no S2 com SSG/ISR, SEO, grade sem conteúdo gated, amostra e CTAs |
 
 ## Informações úteis
 

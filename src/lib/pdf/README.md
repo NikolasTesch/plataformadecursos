@@ -26,7 +26,8 @@ src/lib/pdf ──► documento PDF sob demanda (com gating)
 | 2026-08-13 | Certificado (US-29) gera PDF com código de verificação público e regenerável (SPEC-aluno.md:59-63) |
 | 2026-08-13 | D-C6: PDF de impressão (US-41) descartável, sem cache persistente, com gating R12 (SPEC-conteudo.md:62-63) |
 | 2026-08-13 | Download em lote (US-43) é ZIP, não PDF — textos/resumos convertidos para PDF/markdown dentro do ZIP (D-A2, SPEC-aluno.md:74) |
-| 2026-08-14 | Criação desta pasta `src/lib/pdf/` com README (estrutura de pastas) — nenhum código ainda |
+| 2026-08-14 | Criação desta pasta `src/lib/pdf/` com README |
+| 2026-08-17 | Impressão de materiais `texto`/`resumo` implementada para US-41; certificado permanece no escopo de S3 |
 
 ## Informações úteis
 

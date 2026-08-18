@@ -138,10 +138,11 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 
 ## 10. NOTAS
 
-### Estado atual do projeto (2026-08-15)
+### Estado atual do projeto (2026-08-17)
 
-- **Fase**: implementação **iniciada** — **S1 — Fundação concluído** em 2026-08-15. Próximo slice: **S2 — Conteúdo**.
-- **S1 entregue (2026-08-15)**: scaffold **Next.js 16.3.1 + TypeScript** (temp-dir create-next-app, Tailwind v4, shadcn init); **PostgreSQL 16 via Docker** (host **5433** — 5432 ocupada); schema Prisma **30 models** + migration `20260815133031_init` aplicada; **seed idempotente** (admin + aluno demo, argon2id); **Auth.js v5 beta.32 split** (auth.config Edge-safe + auth.ts Node, JWT 30d/24h + tokenVersion, revogação A3); **middleware Edge-safe** com roles (`NextResponse.redirect`; Next 16 deprecou middleware→proxy); **services/auth** (registrar US-01, login US-02, logout, bloqueio US-20, erros `ErroAuth`); **rotas finas** `/login` e `/cadastro` (server actions + useActionState); **71 testes unitários + 2 specs E2E verdes** (auth + bloqueio).
+- **Fase**: **S2 — Conteúdo concluído** em 2026-08-17. Próximo slice: **S3 — Área do aluno core**.
+- **S1 entregue (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, middleware com roles e services/auth.
+- **S2 entregue (2026-08-17)**: CRUD/publicação de conteúdo, storage R2/stub, sanitização, gating mínimo, leitura/impressão PDF, busca com indexação PDF, admin UI e sales page US-44; 292 testes unitários, 6 E2E verdes e TypeScript/build aprovados.
 
 ### Histórico do estado (2026-08-13/14, mantido)
 
