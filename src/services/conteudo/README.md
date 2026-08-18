@@ -9,6 +9,7 @@ Regras de negócio do domínio de conteúdo: CRUD de cursos, módulos e materiai
 - Serviços aqui consomem `src/lib/storage` (upload de PDF e URL assinada, R2/C5), `src/lib/sanitize` (conteúdo HTML de `texto`/`resumo`) e `src/lib/pdf` (extração de texto para busca). Rotas `admin/cursos`, `admin/materiais`, `app/cursos/[slug]` e `cursos/[slug]` (sales page) chamam estes serviços.
 - Dados em `courses`, `modules` e `materials` (modelo-de-dados.md §2.2): `status` rascunho/publicado, `amostra` (máx. 1 por curso, C2), `slug` único e imutável após o 1º material publicado (C1), `arquivo_key` para PDF.
 - Publicação: rascunho invisível para alunos (R5); material `video` só publica com status `pronto` (R11); despublicar tem efeito imediato na próxima requisição.
+- Leitura e busca passam o estado da conta ao gating; despublicação invalida o cache do curso após atualizar o material.
 
 ## Decisões tomadas
 

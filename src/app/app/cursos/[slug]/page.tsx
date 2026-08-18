@@ -1,15 +1,13 @@
 // /app/cursos/[slug] — página do curso do aluno (US-11, SPEC-aluno.md:32-36).
 //
 // ROTA FINA (AGENTS.md §6): verificação de sessão em Node (padrão S1) +
-// serviços (obterCursoPorSlug, listarModulos, listarMateriais) + gating por
-// material (podeAcessarMaterial — caller monta o shape dos entitlements a
-// partir de Prisma, contrato do README de gating).
+// serviço de navegação (consultas, transformações e gating) + renderização.
 //
 // Regras:
 //   - R5: curso inexistente → notFound(); curso sem material publicado →
 //     notFound() (oculto do aluno). Materiais `rascunho` NÃO são renderizados.
 //   - R6: módulos e materiais ordenados por `ordem` (asc — feito no serviço).
-//   - Gating (subset R1-R4): amostra → MaterialCard status `amostra`;
+//   - Gating S3: amostra → MaterialCard status `amostra`;
 //     assinatura ativa / venda_unica → `disponivel`; senão BloqueadoCard —
 //     NUNCA conteúdo (R12): o card bloqueado não recebe conteúdo nem link.
 //
@@ -22,23 +20,8 @@ import { BloqueadoCard } from "@/components/app/BloqueadoCard";
 import { MaterialCard } from "@/components/app/MaterialCard";
 import { auth } from "@/lib/auth/auth";
 import { verificarSessaoValida } from "@/lib/auth/verificar-sessao";
-import { db } from "@/lib/db";
-import { ErroConteudo } from "@/services/conteudo/erros";
-import { obterCursoPorSlug } from "@/services/conteudo/cursos";
-import { listarModulos } from "@/services/conteudo/modulos";
-import { listarMateriais } from "@/services/conteudo/materiais";
-import {
-  podeAcessarMaterial,
-  type EntitlementGating,
-  type MotivoGating,
-} from "@/services/gating";
-import type {
-  courses,
-  entitlements,
-  MaterialTipo,
-  modules,
-  products,
-} from "@/generated/prisma/client";
+import { emitirCertificadoAction } from "./certificado-actions";
+import { obterCursoAlunoPorSlug } from "@/services/aluno/navegacao";
 
 export const metadata: Metadata = {
   title: "Curso | ConcursFoco",
@@ -46,39 +29,6 @@ export const metadata: Metadata = {
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-/** Entitlement com o produto carregado (join do Prisma). */
-type EntitlementComProduto = entitlements & { product: products };
-
-/**
- * Monta o shape mínimo do gating a partir das linhas de `entitlements`
- * (contrato `EntitlementGating`, README de gating — caller monta os dados).
- * Produto inativo não concede acesso (R2 — checagem do caller no subset;
- * o motor completo do S3 incorpora "produto ativo").
- */
-function montarEntitlements(linhas: EntitlementComProduto[]): EntitlementGating[] {
-  return linhas.flatMap((linha) => {
-    const produto = linha.product;
-    if (produto.status !== "ativo") return [];
-    return [
-      {
-        id: linha.id,
-        origem: linha.origem,
-        acesso_ate: linha.acesso_ate,
-        product_id: linha.product_id,
-        product: { tipo: produto.tipo, curso_id: produto.curso_id },
-      },
-    ];
-  });
-}
-
-interface MaterialComStatus {
-  id: string;
-  titulo: string;
-  tipo: MaterialTipo;
-  permitido: boolean;
-  motivo: MotivoGating;
 }
 
 export default async function AppCursoPage({ params }: Props) {
@@ -89,61 +39,9 @@ export default async function AppCursoPage({ params }: Props) {
   const sessaoValida = await verificarSessaoValida(session);
   if (!sessaoValida) redirect("/login");
 
-  let curso: courses;
-  try {
-    curso = await obterCursoPorSlug(slug);
-  } catch (erro) {
-    if (erro instanceof ErroConteudo && erro.code === "nao_encontrado") {
-      notFound(); // R5 — curso inexistente é 404 para o aluno
-    }
-    throw erro;
-  }
-
-  // R5 — curso sem material publicado fica oculto do aluno (SPEC-aluno.md:33).
-  const publicados = await db.materials.count({
-    where: { modulo: { course_id: curso.id }, status: "publicado" },
-  });
-  if (publicados === 0) notFound();
-
-  // Entitlements do aluno (avaliados a cada requisição — R7).
-  const linhasEntitlements = await db.entitlements.findMany({
-    where: { user_id: session.user.id },
-    include: { product: true },
-  });
-  const entitlements = montarEntitlements(linhasEntitlements);
-
-  // Módulos (R6 — ordem asc) + materiais publicados com status via gating.
-  const modulos = await listarModulos(curso.id);
-  const modulosComMateriais: Array<{
-    modulo: modules;
-    materiais: MaterialComStatus[];
-  }> = [];
-  for (const modulo of modulos) {
-    const materiais = await listarMateriais(modulo.id); // R6 — ordem asc
-    const publicadosDoModulo = materiais.filter((m) => m.status === "publicado"); // R5
-    if (publicadosDoModulo.length === 0) continue; // módulo sem conteúdo visível
-    modulosComMateriais.push({
-      modulo,
-      materiais: publicadosDoModulo.map((m) => {
-        const resultado = podeAcessarMaterial({
-          userId: session.user.id,
-          material: { id: m.id, status: m.status, amostra: m.amostra },
-          curso: {
-            id: curso.id,
-            incluido_assinatura: curso.incluido_assinatura,
-          },
-          entitlements,
-        });
-        return {
-          id: m.id,
-          titulo: m.titulo,
-          tipo: m.tipo,
-          permitido: resultado.permitido,
-          motivo: resultado.motivo,
-        };
-      }),
-    });
-  }
+  const dados = await obterCursoAlunoPorSlug(session.user.id, slug);
+  if (!dados) notFound();
+  const { curso, modulos: modulosComMateriais, percentual } = dados;
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
@@ -159,6 +57,10 @@ export default async function AppCursoPage({ params }: Props) {
         {curso.descricao && (
           <p className="mt-1 text-sm text-muted-foreground">{curso.descricao}</p>
         )}
+        <div className="mt-5 max-w-sm">
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Progresso</span><strong className="text-primary">{percentual}%</strong></div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={`Progresso em ${curso.nome}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentual}><div className="h-full rounded-full bg-primary" style={{ width: `${percentual}%` }} /></div>
+        </div>
         {curso.incluido_assinatura && (
           <span className="mt-3 inline-block rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             Incluído na assinatura
@@ -187,12 +89,10 @@ export default async function AppCursoPage({ params }: Props) {
                       <MaterialCard
                         cursoSlug={curso.slug}
                         material={material}
-                        status={
-                          material.motivo === "amostra" ? "amostra" : "disponivel"
-                        }
+                        status={material.status === "amostra" ? "amostra" : material.status === "concluido" ? "concluido" : "disponivel"}
                       />
                     ) : (
-                      <BloqueadoCard material={material} />
+                      <BloqueadoCard material={material} motivo={material.motivo} />
                     )}
                   </li>
                 ))}
@@ -200,6 +100,12 @@ export default async function AppCursoPage({ params }: Props) {
             </section>
           ))}
         </div>
+      )}
+      {percentual === 100 && (
+        <form action={emitirCertificadoAction}>
+          <input type="hidden" name="course_id" value={curso.id} />
+          <button type="submit" className="rounded-md border px-4 py-2 text-sm">Emitir certificado</button>
+        </form>
       )}
     </main>
   );

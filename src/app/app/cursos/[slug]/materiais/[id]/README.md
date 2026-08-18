@@ -10,10 +10,11 @@ Rota `/app/cursos/{slug}/materiais/{id}`: leitura/visualização de um material 
 src/app/app/cursos/[slug]/materiais/[id]/
 ├── README.md          # Este arquivo
 ├── layout.tsx         # Layout player: 72ch central + barra lateral contextual
-└── page.tsx           # Renderização gated do material (S2)
+├── page.tsx           # Renderização gated do material + progresso (S2/S3.2)
+└── actions.ts         # Action fina para concluir/desmarcar
 ```
 
-Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (R12: bloqueio não entrega conteúdo). S2 renderiza texto/resumo sanitizados e PDF via URL assinada/impressão gated; vídeo, questões, anotações e progresso ficam nos slices correspondentes.
+Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (R12: bloqueio não entrega conteúdo). S2 renderiza texto/resumo sanitizados e PDF via URL assinada/impressão gated; S3.2 adiciona conclusão manual e percentual usando `user_progress`, sem alterar o fluxo de conteúdo bloqueado.
 
 ## Decisões tomadas
 
@@ -24,6 +25,8 @@ Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (
 | 2026-08-14 | URL limpa `/app/cursos/{slug}/materiais/{id}` (SPEC-aluno.md:36) — o `id` é o do material, sem parâmetros extras |
 | 2026-08-14 | Gating avaliado a cada requisição de conteúdo (SPEC-aluno.md:38-44); bloqueio devolve zero conteúdo (R12) |
 | 2026-08-17 | S2 implementa leitura/impressão de texto, resumo e PDF; o gating completo R1-R12 será substituído no S3 |
+| 2026-08-18 | S3.2 adiciona toggle manual de progresso; vídeo automático (V5) permanece fora deste slice |
+| 2026-08-18 | S3.3 adiciona painel mínimo de anotação; service mantém o isolamento por aluno |
 
 ## Informações úteis
 

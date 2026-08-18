@@ -42,7 +42,7 @@ test("fluxo registro → /app → logout → /login → login → /app", async (
     // form → server action → registrar() → signIn → redirect("/app")
     await expect(page).toHaveURL(/\/app/);
     await expect(
-      page.getByRole("heading", { name: "Área do aluno" }),
+      page.getByRole("heading", { name: /Olá, aluno/i }),
     ).toBeVisible();
   });
 
@@ -78,7 +78,7 @@ test("fluxo registro → /app → logout → /login → login → /app", async (
   await test.step("login redireciona para /app", async () => {
     await expect(page).toHaveURL(/\/app/);
     await expect(
-      page.getByRole("heading", { name: "Área do aluno" }),
+      page.getByRole("heading", { name: /Olá, aluno/i }),
     ).toBeVisible();
   });
 });

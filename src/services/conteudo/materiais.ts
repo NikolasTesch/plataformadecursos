@@ -29,6 +29,7 @@ import type {
 } from "@/generated/prisma/client";
 
 import { ErroConteudo, erroValidacao } from "./erros";
+import { invalidarPorCurso } from "@/services/gating";
 
 export interface DbMateriais {
   modules: {
@@ -476,10 +477,13 @@ export async function despublicarMaterial(
 
   // R5 (SPEC-conteudo §3.6/:74): efeito imediato — status → rascunho. publicado_em
   // é MANTIDO (histórico); um novo publicar o atualiza de novo.
-  return db.materials.update({
+  const atualizado = await db.materials.update({
     where: { id },
     data: { status: "rascunho" },
   });
+  const modulo = await db.modules.findUnique({ where: { id: material.module_id } });
+  if (modulo) invalidarPorCurso(modulo.course_id);
+  return atualizado;
 }
 
 /** Lista materiais de um módulo ordenados por `ordem` crescente (R6). */

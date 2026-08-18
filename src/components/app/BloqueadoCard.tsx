@@ -28,6 +28,7 @@ export function BloqueadoCard({ material, motivo }: PropsBloqueadoCard) {
   return (
     <div
       data-testid={`bloqueado-${material.id}`}
+      data-status="bloqueado"
       data-motivo={motivo ?? "bloqueado"}
       className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/40 p-4"
       aria-label={`Material bloqueado: ${material.titulo}`}

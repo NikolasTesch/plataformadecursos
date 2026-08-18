@@ -24,6 +24,7 @@ src/app/verificar/[codigo]/
 |---|---|
 | 2026-08-14 | Segmento criado antes do código (estrutura + READMEs); `page.tsx` será criado no slice de certificados |
 | 2026-08-14 | Server Component obrigatório (sem JS): certificado é documento público de conferência e deve funcionar com JavaScript desabilitado (SPEC-frontend.md:168) |
+| 2026-08-18 | S3.4: página consulta somente nome, curso e data; geração/download de PDF ficou explicitamente fora do slice mínimo |
 
 ## Informações úteis
 

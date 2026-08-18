@@ -147,7 +147,7 @@ test("bloqueio revoga sessão ativa e nega re-login (E2E-A1)", async ({
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect(page).toHaveURL(/\/app/);
     await expect(
-      page.getByRole("heading", { name: "Área do aluno" }),
+      page.getByRole("heading", { name: /Olá,/ }),
     ).toBeVisible();
   });
 

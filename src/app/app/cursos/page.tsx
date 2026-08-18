@@ -14,12 +14,13 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/auth";
 import { verificarSessaoValida } from "@/lib/auth/verificar-sessao";
-import { db } from "@/lib/db";
-import { listarCursos } from "@/services/conteudo/cursos";
+import { listarCursosAluno } from "@/services/aluno/navegacao";
 
 export const metadata: Metadata = {
   title: "Cursos | ConcursFoco",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function AppCursosPage() {
   const session = await auth();
@@ -27,20 +28,7 @@ export default async function AppCursosPage() {
   const sessaoValida = await verificarSessaoValida(session);
   if (!sessaoValida) redirect("/login");
 
-  const cursos = await listarCursos();
-
-  // R5 — cursos sem material publicado ficam ocultos (contagem via relação
-  // modulo → course_id; mesmo shape da checagem C1 do serviço de cursos).
-  const cursosVisiveis = (
-    await Promise.all(
-      cursos.map(async (curso) => ({
-        curso,
-        publicados: await db.materials.count({
-          where: { modulo: { course_id: curso.id }, status: "publicado" },
-        }),
-      })),
-    )
-  ).filter(({ publicados }) => publicados > 0);
+  const cursosVisiveis = await listarCursosAluno(session.user.id);
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
@@ -64,7 +52,7 @@ export default async function AppCursosPage() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {cursosVisiveis.map(({ curso }) => (
+          {cursosVisiveis.map(({ curso, percentual }) => (
             <li key={curso.id}>
               <Link
                 href={`/app/cursos/${curso.slug}`}
@@ -81,7 +69,8 @@ export default async function AppCursosPage() {
                     </span>
                   )}
                 </span>
-                <span className="flex shrink-0 items-center gap-2">
+                <span className="flex shrink-0 items-center gap-3">
+                  <span className="text-sm font-bold text-primary">{percentual}%</span>
                   {curso.incluido_assinatura && (
                     <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       Incluído na assinatura

@@ -79,6 +79,7 @@ export interface ParamsBuscar {
   cursoId?: string;
   /** Usuário para o gating (entitlements ativos do usuário). */
   userId: string;
+  usuario?: { id: string; bloqueado: boolean };
 }
 
 export interface DepsBusca {
@@ -86,6 +87,9 @@ export interface DepsBusca {
 }
 
 export interface DbBusca {
+  users?: {
+    findUnique: (args: { where: { id: string }; select: { id: true; bloqueado: true } }) => Promise<{ id: string; bloqueado: boolean } | null>;
+  };
   materials: {
     findMany: (args: {
       where: {
@@ -190,7 +194,7 @@ export async function buscar(
   const cursoId = validarCursoId(params.cursoId);
 
   // 2. Consulta paralela: candidatos publicados + entitlements ativos do usuário.
-  const [materiais, entitulamentos] = await Promise.all([
+  const [materiais, entitulamentos, usuarioDb] = await Promise.all([
     db.materials.findMany({
       where: {
         status: "publicado",
@@ -208,9 +212,13 @@ export async function buscar(
       where: { user_id: params.userId, product: { status: "ativo" } },
       include: { product: true },
     }),
+    params.usuario === undefined && db.users
+      ? db.users.findUnique({ where: { id: params.userId }, select: { id: true, bloqueado: true } })
+      : Promise.resolve(undefined),
   ]);
 
   const entitlements = montarEntitlements(entitulamentos);
+  const usuario = params.usuario ?? usuarioDb ?? undefined;
 
   // 3. Gating por linha com a MESMA função de leitura (fonte única de verdade).
   //    Só materiais permitidos viram resultado (R1-R4); `motivoAcesso` alimenta
@@ -229,6 +237,7 @@ export async function buscar(
         incluido_assinatura: material.modulo.course.incluido_assinatura,
       },
       entitlements,
+      usuario,
     });
     if (gating.permitido) {
       acessiveis.push({

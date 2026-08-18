@@ -19,8 +19,12 @@ A pasta atua como a interface entre as rotas de `/app/*` e as regras de progress
 ## Arquitetura
 
 - **Serviço único de progresso**: registra conclusão manual (`pdf|texto|questoes`) e automática de vídeo (≥95%, V5); recalcula imediatamente ao desmarcar. Progresso do curso = concluídos ÷ publicados acessíveis — bloqueados fora do denominador (AL1).
+- **S3.2 (2026-08-18)**: `progresso.ts` grava `user_progress` com upsert idempotente, permite desmarcar sem criar linha e reavalia gating no servidor. Vídeo permanece conclusão manual; o hook automático V5 é S5.
 - **Anotações**: CRUD por material com texto livre (máx. 10.000 caracteres), listagem "Minhas anotações" e busca por texto; privadas, incluídas na exportação LGPD (US-24).
+- **S3.3 (2026-08-18)**: `anotacoes.ts` valida o limite no servidor e aplica `user_id` em toda operação; a rota e a página do material usam apenas `requireRole("aluno")`.
 - **Certificados**: elegível com 100% dos materiais publicados acessíveis concluídos (AL2); código de verificação único e sem PII (AL3); regenerável com o mesmo código.
+- **S3.4 (2026-08-18)**: `certificados.ts` aplica AL1/AL2, emite via `upsert` idempotente e expõe verificação pública mínima. A emissão prioriza a verificabilidade; PDF ainda não foi adicionado nesta implementação bounded.
+- **S3.5 (2026-08-18)**: `navegacao.ts` lista somente cursos com material publicado e delega o percentual a `progressoCurso(userId, courseId)`, preservando gating e isolamento server-side. A visão da página de curso também é montada aqui: entitlements, materiais publicados e status de gating não são consultados nem transformados pela rota.
 - **PWA/offline (S7)**: fila persistente (IndexedDB) com sincronização last-write-wins (AL5); download offline exige gating aprovado no momento do download (AL4); revogação não apaga downloads existentes, cache limitado a 30 dias (D-A1).
 - **Download em lote ZIP (S7)**: sem vídeos (D-A4), questões sem gabarito (D-A3), URL assinada 24h, gating na solicitação e novamente no download (AL6).
 - **Tabelas** (modelo-de-dados.md §2.5): `user_progress` (pk user_id+material_id, `concluido`, `posicao_segundos`), `notes`, `certificates` (código único).

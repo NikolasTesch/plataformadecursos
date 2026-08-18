@@ -143,5 +143,6 @@ Scripts definidos em `package.json`; detalhes por pasta nos READMEs (ex.: `prism
 - Estrutura de pastas criada + README por pasta (2026-08-14)
 - **S1 — Fundação concluído (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, middleware com roles e services/auth.
 - **S2 — Conteúdo concluído (2026-08-17)**: CRUD/publicação de conteúdo, R2/stub, sanitização, gating mínimo, leitura/impressão PDF, busca com indexação PDF, admin UI, sales page US-44, 292 testes unitários e 6 E2E verdes.
-- Fase atual: **próximo slice: S3 — Área do aluno core**
+- **S3 — Área do aluno core implementada (2026-08-18)**: gating completo, app-shell/home, progresso AL1, anotações privadas, certificados AL2 e verificação pública; 313 testes unitários, 6 E2E gerais, TypeScript/build aprovados. E2E específicos e revisão final F1–F4 ainda pendentes. Certificado PDF ficou fora do slice bounded.
+- Fase atual: **S3 aguardando gate final; próximo slice após aprovação: S4 — Questões**
 - Marca: **ConcursFoco**

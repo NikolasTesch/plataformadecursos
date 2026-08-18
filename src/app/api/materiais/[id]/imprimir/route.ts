@@ -69,6 +69,7 @@ export async function GET(_request: Request, { params }: Props) {
       material,
       curso,
       entitlements: montarEntitlementsGating(linhas),
+      usuario: { id: session.user.id, bloqueado: false },
     },
   );
   const estado = resolverAcessoMaterial({

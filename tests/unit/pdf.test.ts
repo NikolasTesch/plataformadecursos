@@ -18,7 +18,7 @@
 // Pipeline validado por probe antes das assertivas (learning do todo).
 import { describe, expect, it } from "vitest";
 
-import { ErroPdf, gerarPdfMaterial, htmlParaTextoPuro } from "@/lib/pdf";
+import { ErroPdf, gerarPdfCertificado, gerarPdfMaterial, htmlParaTextoPuro } from "@/lib/pdf";
 
 // ---------------------------------------------------------------------------
 // Helper de teste: extrai o texto de um PDF gerado por pdfkit (compress:false)
@@ -217,5 +217,18 @@ describe("gerarPdfMaterial (US-41)", () => {
     await expect(
       gerarPdfMaterial({ titulo: "   ", conteudoHtml: "<p>x</p>" }),
     ).rejects.toMatchObject({ code: "TITULO_VAZIO" });
+  });
+});
+
+describe("gerarPdfCertificado", () => {
+  it("gera PDF mínimo com os quatro dados do certificado", async () => {
+    const pdf = await gerarPdfCertificado({
+      nome: "Ana",
+      curso: "Direito",
+      data: new Date("2026-08-18T12:00:00Z"),
+      codigo: "codigo-seguro-123456",
+    });
+    expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(pdf.length).toBeGreaterThan(500);
   });
 });

@@ -113,7 +113,7 @@ async function enterAdmin(page: Page): Promise<void> {
 
 async function enterStudent(page: Page): Promise<void> {
   await enter(page, STUDENT_EMAIL, STUDENT_PASSWORD);
-  await expect(page.getByRole("heading", { name: "Área do aluno", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Olá,/ })).toBeVisible();
 }
 
 test.beforeAll(() => {

@@ -82,7 +82,7 @@ Todas as pendências foram decididas pelo usuário. Registro para consulta:
 
 ## 5. Como aprovar
 
-- ~~Em lote / parcial / com ajuste~~ — **todas as 15 specs de domínio + 3 documentos de apoio aprovados**. Implementação em andamento; S1 concluído em 2026-08-15 e S2 concluído em 2026-08-17. Próximo slice: S3 — Área do aluno core.
+- ~~Em lote / parcial / com ajuste~~ — **todas as 15 specs de domínio + 3 documentos de apoio aprovados**. Implementação em andamento; S1 concluído em 2026-08-15, S2 concluído em 2026-08-17 e S3 implementado em 2026-08-18. O gate final do S3 (E2E específicos e F1–F4) permanece pendente; próximo slice após aprovação: S4 — Questões.
 
 ---
 

@@ -30,6 +30,10 @@ import {
   resolverLeituraMaterial,
 } from "@/services/conteudo/leitura";
 import { obterMaterial } from "@/services/conteudo/materiais";
+import { obterProgressoMaterial, progressoCurso } from "@/services/aluno/progresso";
+import { ProgressoToggle } from "@/components/app/ProgressoToggle";
+import { criarAnotacaoAction } from "@/app/app/anotacoes/actions";
+import { listarPorMaterial } from "@/services/aluno/anotacoes";
 
 interface Props {
   params: Promise<{ slug: string; id: string }>;
@@ -132,6 +136,11 @@ export default async function PaginaLeituraMaterial({ params }: Props) {
 
   // 4. Conteúdo autorizado — renderização por tipo.
   const m = resultado.material;
+  const [concluido, percentual, notas] = await Promise.all([
+    obterProgressoMaterial(session.user.id, m.id),
+    progressoCurso(session.user.id, curso.id),
+    listarPorMaterial(session.user.id, m.id),
+  ]);
   return (
     <main className="mx-auto max-w-[72ch] px-6 py-10">
       <header className="mb-8">
@@ -144,6 +153,9 @@ export default async function PaginaLeituraMaterial({ params }: Props) {
             Resumo
           </span>
         )}
+        <p className="mt-2 text-sm text-neutral-500">
+          Progresso do curso: {percentual}% {concluido ? "· concluído" : ""}
+        </p>
       </header>
 
       {(m.tipo === "texto" || m.tipo === "resumo") && (
@@ -190,6 +202,17 @@ export default async function PaginaLeituraMaterial({ params }: Props) {
           </p>
         </div>
       )}
+      <ProgressoToggle materialId={m.id} cursoSlug={slug} concluido={concluido} />
+      <section className="mt-8 space-y-3 border-t pt-6">
+        <h2 className="text-lg font-semibold">Minha anotação</h2>
+        {notas.map((nota) => <p key={nota.id} className="whitespace-pre-wrap rounded border p-3 text-sm">{nota.conteudo}</p>)}
+        <form action={criarAnotacaoAction} className="space-y-2">
+          <input type="hidden" name="material_id" value={m.id} />
+          <input type="hidden" name="caminho" value={`/app/cursos/${slug}/materiais/${m.id}`} />
+          <textarea name="conteudo" maxLength={10000} required placeholder="Escreva uma anotação (máx. 10.000 caracteres)" className="min-h-28 w-full rounded border p-3" />
+          <button className="rounded bg-neutral-900 px-4 py-2 text-sm text-white">Adicionar anotação</button>
+        </form>
+      </section>
     </main>
   );
 }

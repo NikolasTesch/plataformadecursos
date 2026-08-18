@@ -13,7 +13,8 @@ Rota `/app/anotacoes`: listagem "Minhas anotações" do aluno (US-15, SPEC-aluno
 ```
 src/app/app/anotacoes/
 ├── README.md          # Este arquivo
-└── page.tsx           # Listagem + busca + CRUD de anotações (a criar no S2)
+├── page.tsx           # Listagem + busca + edição/exclusão
+└── actions.ts         # Server actions finas, exclusivas de aluno
 ```
 
 Fluxo: a página consulta `src/services/aluno` (domínio anotações) pelas anotações do aluno autenticado, com busca por texto. A edição/inserção também acontece no contexto de leitura do material (`cursos/[slug]/materiais/[id]`); esta rota agrega tudo em um só lugar. O limite de 10.000 caracteres é validado no servidor. Inclusão na exportação LGPD é garantida pelo service de exportação (SPEC-auth.md:55).
@@ -26,6 +27,7 @@ Fluxo: a página consulta `src/services/aluno` (domínio anotações) pelas anot
 | 2026-08-14 | Anotações privadas por padrão: nunca expostas a admin/outros alunos (SPEC-aluno.md:57) |
 | 2026-08-14 | Limite de 10.000 caracteres por anotação (SPEC-aluno.md:55), validado no servidor |
 | 2026-08-14 | Anotações entram na exportação LGPD (US-24, SPEC-auth.md:55) |
+| 2026-08-18 | S3.3: CRUD privado por `user_id`, limite server-side de 10.000 caracteres e editor mínimo na leitura do material |
 
 ## Informações úteis
 

@@ -1,8 +1,8 @@
 // Leitura de material — todo 9 do plano s2-conteudo.
 //
 // Resolve o ACESSO a um material para a página de leitura (`/app/cursos/[slug]/
-// materiais/[id]`) e para a impressão PDF (US-41): gating MÍNIMO (subset
-// R1-R4, src/services/gating) avaliado ANTES de qualquer conteúdo (R12) e URL
+// materiais/[id]`) e para a impressão PDF (US-41): gating completo do S3
+// avaliado ANTES de qualquer conteúdo (R12) e URL
 // assinada (C5 — storage) emitida SOMENTE no ramo permitido.
 //
 // Arquitetura (D-L1): TUDO entra como DADO (material/curso/entitlements) e a
@@ -45,6 +45,7 @@ export interface MaterialLeitura {
 /** Contexto completo da decisão de leitura (tudo como DADO — D-G2). */
 export interface ContextoLeituraMaterial {
   userId: string;
+  usuario?: { id: string; bloqueado: boolean };
   sessaoValida: boolean;
   material: MaterialLeitura | null;
   curso: CursoGating | null;
@@ -88,7 +89,7 @@ export interface LinhaEntitlementGating {
 /**
  * Monta o shape `EntitlementGating[]` a partir das linhas do Prisma (D-G3):
  * entitlements com product AUSENTE ou product `inativo` são descartados —
- * o subset R1-R4 exige produto ativo para conceder (checagem do S3 completa
+ * o motor S3 exige produto ativo para conceder (checagem
  * o resto). `origem` pagamento|trial|admin: todas contam igual.
  */
 export function montarEntitlementsGating(linhas: LinhaEntitlementGating[]): EntitlementGating[] {
@@ -136,7 +137,7 @@ export function resolverAcessoMaterial(
 
 /** Roda o gating mínimo quando material+curso existem; senão null. */
 export function resolverGatingMaterial(
-  ctx: Pick<ContextoLeituraMaterial, "userId" | "material" | "curso" | "entitlements">,
+  ctx: Pick<ContextoLeituraMaterial, "userId" | "material" | "curso" | "entitlements" | "usuario">,
   deps: { agora?: Date } = {},
 ): ResultadoGating | null {
   const { material, curso } = ctx;
@@ -147,6 +148,7 @@ export function resolverGatingMaterial(
       material,
       curso,
       entitlements: ctx.entitlements,
+      usuario: ctx.usuario,
     },
     { agora: deps.agora },
   );

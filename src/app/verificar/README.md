@@ -23,6 +23,7 @@ src/app/verificar/
 |---|---|
 | 2026-08-14 | Pasta criada antes do código (estrutura + READMEs); `page.tsx` será criado no slice de certificados |
 | 2026-08-14 | Área separada do route group `(auth)`: verificação de certificado é pública e de propósito único, não é fluxo de autenticação |
+| 2026-08-18 | S3.4: verificação implementada sem login; PDF ficou fora do slice bounded para priorizar o registro verificável |
 
 ## Informações úteis
 

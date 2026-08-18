@@ -22,6 +22,8 @@ Fluxo: o parâmetro `slug` identifica o curso; a página consulta `src/services/
 | 2026-08-14 | MaterialCard com status `disponivel`/`concluido`/`bloqueado`/`amostra` (SPEC-aluno.md:34) — badge é a fonte de verdade visual do acesso |
 | 2026-08-14 | BloqueadoCard exibido **sem conteúdo** (nem PDF, texto, vídeo ou gabarito) — R12; o CTA "Assinar"/"Comprar" aponta para o produto existente (SPEC-aluno.md:35) |
 | 2026-08-14 | Módulos ordenados conforme R6 (SPEC-aluno.md:34) |
+| 2026-08-18 | S3.4: quando AL1 chega a 100%, ação mínima emite certificado idempotente e redireciona para a verificação pública; PDF ficou fora do bounded slice |
+| 2026-08-18 | S3.5: consultas de entitlements e transformação de status/gating movidas para `services/aluno/navegacao`; a rota permanece parse → service → render |
 
 ## Informações úteis
 

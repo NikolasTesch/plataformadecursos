@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import type { MaterialTipo } from "@/generated/prisma/client";
 
 /** Status de acesso exibido pelo card — `concluido` é do S3 (progresso). */
-export type StatusMaterialCard = "disponivel" | "amostra";
+export type StatusMaterialCard = "disponivel" | "concluido" | "amostra";
 
 export interface PropsMaterialCard {
   /** Slug do curso — monta o link da rota de leitura (SPEC-aluno.md:36). */
@@ -62,6 +62,7 @@ export function MaterialCard({ cursoSlug, material, status }: PropsMaterialCard)
     <Link
       href={`/app/cursos/${cursoSlug}/materiais/${material.id}`}
       data-testid={`material-${material.id}`}
+      data-status={status}
       className="group flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
@@ -77,15 +78,15 @@ export function MaterialCard({ cursoSlug, material, status }: PropsMaterialCard)
         </span>
       </span>
 
-      {status === "amostra" && (
+      {status !== "disponivel" && (
         <span
-          data-testid={`amostra-${material.id}`}
+          data-testid={`${status}-${material.id}`}
           className={cn(
             "shrink-0 rounded-full border border-primary/40 bg-primary/10",
             "px-2 py-0.5 text-xs font-medium text-primary",
           )}
         >
-          Amostra
+          {status === "amostra" ? "Amostra" : "Concluído"}
         </span>
       )}
 

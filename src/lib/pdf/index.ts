@@ -46,6 +46,8 @@ export interface DadosPdfMaterial {
   conteudoHtml: string | null;
 }
 
+export interface DadosPdfCertificado { nome: string; curso: string; data: Date; codigo: string; }
+
 // ---------------------------------------------------------------------------
 // Fontes embutidas (DejaVu Sans — Unicode completo, ver cabeçalho)
 // ---------------------------------------------------------------------------
@@ -176,6 +178,30 @@ export async function gerarPdfMaterial(dados: DadosPdfMaterial): Promise<Buffer>
     doc.moveDown();
     doc.font("DejaVuSans").fontSize(12).text(corpo, { lineGap: 4 });
 
+    doc.end();
+  });
+}
+
+/** Gera o certificado mínimo, sem endereço, e-mail ou qualquer PII adicional. */
+export async function gerarPdfCertificado(dados: DadosPdfCertificado): Promise<Buffer> {
+  const nome = dados.nome.trim();
+  const curso = dados.curso.trim();
+  const codigo = dados.codigo.trim();
+  if (!nome || !curso || !codigo) throw new ErroPdf("dados do certificado incompletos", "TITULO_VAZIO");
+  const { sans, bold } = obterFontes();
+  const data = dados.data.toLocaleDateString("pt-BR");
+  return new Promise<Buffer>((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 64, compress: false });
+    const pedacos: Buffer[] = [];
+    doc.on("data", (pedaco: Buffer) => pedacos.push(pedaco));
+    doc.on("end", () => resolve(Buffer.concat(pedacos)));
+    doc.on("error", reject);
+    doc.registerFont("DejaVuSans", sans).registerFont("DejaVuSans-Bold", bold);
+    doc.font("DejaVuSans-Bold").fontSize(24).text("Certificado", { align: "center" });
+    doc.moveDown(2).font("DejaVuSans").fontSize(16).text(nome, { align: "center" });
+    doc.moveDown().fontSize(13).text(`Concluiu o curso: ${curso}`, { align: "center" });
+    doc.moveDown().text(`Data: ${data}`, { align: "center" });
+    doc.moveDown().fontSize(11).text(`Código: ${codigo}`, { align: "center" });
     doc.end();
   });
 }

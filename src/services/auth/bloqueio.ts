@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import type { Prisma, users } from "@/generated/prisma/client";
 
 import { ErroAuth } from "./erros";
+import { invalidarPorUsuario } from "@/services/gating";
 
 /** Dependências injetáveis (testabilidade): banco + adminId (RBAC). */
 export interface SetBloqueadoDeps {
@@ -52,5 +53,7 @@ export async function setBloqueado(
     ? { tokenVersion: { increment: 1 }, bloqueado: true }
     : { bloqueado: false };
 
-  return client.users.update({ where: { id: userId }, data });
+  const atualizado = await client.users.update({ where: { id: userId }, data });
+  invalidarPorUsuario(userId);
+  return atualizado;
 }

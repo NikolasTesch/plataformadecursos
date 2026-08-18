@@ -16,6 +16,7 @@ Componentes custom da área do aluno (`/app/*`): o **app-shell** (layout de nave
 | Componente | Função | Domínio |
 |---|---|---|
 | `MaterialCard` | Card de material com status (disponivel/concluido/bloqueado/amostra) e tipo com ícone | conteúdo |
+| `ProgressoToggle` | Toggle manual de conclusão em material já autorizado | progresso (S3.2) |
 | `BloqueadoCard` | Material sem acesso: cadeado + título + CTA "Assinar"/"Comprar" — **nunca expõe conteúdo** | gating (R12) |
 | `QuestaoCard` | Questão com alternativas, feedback e favoritar | questões |
 | `StreakBadge` | N dias de sequência + barra de meta diária | engajamento |
