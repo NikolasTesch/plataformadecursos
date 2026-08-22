@@ -7,8 +7,7 @@
 //   - pdf → upload presigned DIRETO: valida %PDF- (C3, espelho UX) + limite
 //     100MB, pede a URL pré-assinada (action → storage), faz PUT do arquivo
 //     direto na URL (bytes nunca passam pelo servidor) e guarda a arquivo_key;
-//   - video → campos estruturais video_provider_id + video_status (integração
-//     Bunny Stream é S5 — guarda R11 é do serviço);
+//   - video → upload direto Bunny/TUS (a action devolve apenas credenciais);
 //   - questoes → aviso estrutural (formulário real é S4).
 //
 // Regras de negócio TODAS no serviço: estrutura por tipo, C2 (máx. 1 amostra
@@ -40,6 +39,7 @@ import {
   publicarMaterialAction,
   type EstadoMaterial,
 } from "./actions";
+import { VideoUploadPanel } from "@/components/player/VideoUploadPanel";
 
 const ESTADO_INICIAL: EstadoMaterial = {};
 
@@ -99,6 +99,7 @@ export interface MaterialFormDados {
   arquivo_key?: string | null;
   video_provider_id?: string | null;
   video_status?: VideoStatus | null;
+  video_erro?: string | null;
   publicado_em?: string | null;
 }
 
@@ -130,12 +131,6 @@ export function MaterialForm({ dados }: Props) {
   const [status, setStatus] = useState<MaterialStatus>(statusInicial);
   const [amostra, setAmostra] = useState(dados.amostra ?? false);
   const [conteudoHtml, setConteudoHtml] = useState(dados.conteudo_html ?? "");
-  const [videoProviderId, setVideoProviderId] = useState(
-    dados.video_provider_id ?? "",
-  );
-  const [videoStatus, setVideoStatus] = useState<VideoStatus | "">(
-    dados.video_status ?? "",
-  );
   const [arquivo, setArquivo] = useState<EstadoArquivo>(
     dados.arquivo_key
       ? { fase: "pronto", nome: dados.arquivo_key }
@@ -183,8 +178,8 @@ export function MaterialForm({ dados }: Props) {
       if (chave !== "") fd.set("arquivo_key", chave);
     }
     if (tipo === "video") {
-      fd.set("video_provider_id", videoProviderId);
-      if (videoStatus !== "") fd.set("video_status", videoStatus);
+      // IDs e status são exclusivamente controlados pela action de upload e
+      // pelo webhook Bunny; nunca entram no formulário genérico.
     }
     return fd;
   }
@@ -475,52 +470,13 @@ export function MaterialForm({ dados }: Props) {
       )}
 
       {tipo === "video" && (
-        <div className="space-y-3 rounded-md border border-dashed p-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="material-video-provider"
-                className="text-sm font-medium"
-              >
-                ID do vídeo (Bunny Stream)
-              </label>
-              <input
-                id="material-video-provider"
-                name="video_provider_id"
-                type="text"
-                value={videoProviderId}
-                onChange={(e) => setVideoProviderId(e.target.value)}
-                disabled={pendente}
-                className={CLASSE_INPUT}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label
-                htmlFor="material-video-status"
-                className="text-sm font-medium"
-              >
-                Status do vídeo
-              </label>
-              <select
-                id="material-video-status"
-                name="video_status"
-                value={videoStatus}
-                onChange={(e) => setVideoStatus(e.target.value as VideoStatus)}
-                disabled={pendente}
-                className={CLASSE_INPUT}
-              >
-                <option value="">—</option>
-                <option value="processando">processando</option>
-                <option value="pronto">pronto</option>
-                <option value="erro">erro</option>
-              </select>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            estrutura apenas — a integração Bunny Stream (upload/player) chega
-            no S5; vídeo com status “erro” não pode ser publicado (R11)
-          </p>
-        </div>
+        <VideoUploadPanel
+          materialId={dados.id}
+          titulo={titulo || dados.titulo || "Videoaula"}
+          status={dados.video_status ?? null}
+          erroPersistido={dados.video_erro}
+          disabled={pendente || modo === "novo"}
+        />
       )}
 
       {tipo === "questoes" && (

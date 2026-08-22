@@ -6,6 +6,7 @@
 // fica sob Playwright em tests/e2e). O alias `@` → `./src` espelha o
 // tsconfig.json (`@/*` → `./src/*`) para os imports do código-fonte.
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
@@ -17,7 +18,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(fileURLToPath(new URL(".", import.meta.url)), "./src"),
     },
   },
 });

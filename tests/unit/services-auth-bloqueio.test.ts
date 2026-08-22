@@ -13,7 +13,7 @@
 //     efetiva de sessões ativas é via tokenVersion);
 //   - verificarSessaoValida (src/lib/auth/verificar-sessao.ts): enforcement
 //     NODE da revogação, usado por páginas/actions/route handlers — NUNCA no
-//     middleware/Edge (BLOCKER-1).
+//     proxy/Edge (BLOCKER-1).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "next-auth";
 
@@ -125,7 +125,7 @@ describe("logout (US-02 — limpa a sessão)", () => {
   });
 });
 
-describe("verificarSessaoValida (enforcement NODE — BLOCKER-1: nunca no middleware)", () => {
+describe("verificarSessaoValida (enforcement NODE — BLOCKER-1: nunca no proxy)", () => {
   it("tokenVersion igual + usuário ativo → sessão válida", async () => {
     findUniqueMock.mockResolvedValue({ tokenVersion: 1, bloqueado: false });
 

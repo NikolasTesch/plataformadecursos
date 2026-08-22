@@ -8,7 +8,7 @@
 
 - Segmento dinâmico `[codigo]/` contém um Server Component que valida o código e renderiza o certificado público (ver `src/app/verificar/[codigo]/README.md`).
 - Rota pública registrada na tabela de rotas de SPEC-frontend.md:82 (layout minimal, sem app-shell nem admin-shell).
-- Não passa por middleware de proteção de rotas por role (SPEC-frontend.md:89): o gating aqui é apenas a existência do código e a elegibilidade do certificado.
+- Não passa pelo proxy de proteção de rotas por role (SPEC-frontend.md:89): o gating aqui é apenas a existência do código e a elegibilidade do certificado.
 - Fluxo: `parse (código da URL) → service (busca certificado) → respond (render minimal sem JS)` — rotas finas, AGENTS.md §6.
 
 ```

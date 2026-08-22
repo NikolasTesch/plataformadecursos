@@ -13,6 +13,8 @@ import { obterMaterial } from "@/services/conteudo/materiais";
 
 import { encontrarCursoDoModulo } from "../../cursos/_dados";
 import { MaterialForm, type MaterialFormDados } from "../material-form";
+import { listarQuestoes } from "@/services/questoes/questoes";
+import { QuestoesManager } from "../questoes-manager";
 
 export const metadata: Metadata = {
   title: "Editar material | Administração | ConcursFoco",
@@ -45,6 +47,7 @@ export default async function EditarMaterialPage({ params }: Props) {
     arquivo_key: material.arquivo_key,
     video_provider_id: material.video_provider_id,
     video_status: material.video_status,
+    video_erro: material.video_erro,
     publicado_em: material.publicado_em?.toISOString(),
   };
 
@@ -72,6 +75,7 @@ export default async function EditarMaterialPage({ params }: Props) {
 
       <div className="rounded-lg border bg-card p-6 shadow-sm">
         <MaterialForm dados={dados} />
+        {material.tipo === "questoes" && <QuestoesManager materialId={material.id} iniciais={await listarQuestoes(material.id)} />}
       </div>
     </div>
   );

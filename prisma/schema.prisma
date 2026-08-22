@@ -1,4 +1,4 @@
-// ConcursFoco — Schema Prisma (fonte: docs/modelo-de-dados.md v0.2)
+// ConcursFoco — Schema Prisma (fonte: docs/modelo-de-dados.md v0.6, §2.6)
 //
 // Convenções (modelo-de-dados.md:8, AGENTS.md §6):
 // - Nomes de tabelas e colunas em inglês, snake_case.
@@ -18,7 +18,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
   // pg_trgm (busca de materiais, S2): suporte GA no Prisma 7 (sem previewFeatures);
   // sem versão fixa — CREATE EXTENSION usa a default do PostgreSQL 16 (pg_trgm 1.6).
   // O usuário concursfoco é owner do banco, então pode criar a extensão (sem superuser).
@@ -66,6 +66,7 @@ model users {
   course_reviews      course_reviews[]
   notifications       notifications[]
   study_activity      study_activity[]
+  subscriptions       subscriptions[]
 }
 
 // Mantida mesmo com estratégia JWT no S1: compatibilidade futura com
@@ -152,7 +153,7 @@ model materials {
   amostra           Boolean        @default(false) // máx. 1 por curso — validado em serviço (R4/C2)
   conteudo_html     String? // tipo texto/resumo
   arquivo_key       String? // tipo pdf — chave no R2
-  video_provider_id String? // tipo video — Bunny Stream
+  video_provider_id String?        @unique // tipo video — Bunny Stream; null antes do upload
   video_status      VideoStatus?
   video_erro        String?
   // Busca (S2, R7/R8): texto puro lowercased p/ ILIKE — titulo + corpo (texto/resumo) +
@@ -170,6 +171,8 @@ model materials {
   comments        comments[]
   flashcards      flashcards[]
   material_edital material_edital[]
+  // CHECK nomeado em migration raw SQL: vídeo publicado exige video_status pronto;
+  // NULL também é inválido nessa combinação (Prisma não modela CHECK constraints).
 
   // ÍNDICE (R6) — ordem por módulo; NOTA: não é unique (modelo-de-dados §3)
   @@index([module_id, ordem])
@@ -337,13 +340,15 @@ model products {
   nome               String
   preco_mensal_cents Int? // assinatura
   preco_anual_cents  Int? // assinatura — configurável, default 10x mensal (2 meses grátis) (D-P1)
-  curso_id           String? // venda_unica (1:1 curso)
+  preco_unico_cents  Int? // venda_unica
+  curso_id           String?       @unique // venda_unica (1:1 curso)
   status             ProductStatus
   course             courses?      @relation(fields: [curso_id], references: [id])
 
-  purchases    purchases[]
-  coupons      coupons[]
-  entitlements entitlements[]
+  purchases     purchases[]
+  coupons       coupons[]
+  entitlements  entitlements[]
+  subscriptions subscriptions[]
 }
 
 enum PurchaseTipo {
@@ -358,20 +363,86 @@ enum PurchaseStatus {
   reembolsado
 }
 
+enum PurchasePeriodicidade {
+  mensal
+  anual
+}
+
 model purchases {
-  id            String         @id @default(uuid())
-  user_id       String
-  product_id    String
-  mp_payment_id String         @unique
-  tipo          PurchaseTipo
-  status        PurchaseStatus
-  valor_cents   Int
-  coupon_id     String? // registra o uso do cupom (US-46)
-  criado_em     DateTime       @default(now())
-  atualizado_em DateTime       @updatedAt
-  user          users          @relation(fields: [user_id], references: [id])
-  product       products       @relation(fields: [product_id], references: [id])
-  coupon        coupons?       @relation(fields: [coupon_id], references: [id])
+  id              String                 @id @default(uuid())
+  user_id         String
+  product_id      String
+  entitlement_id  String?
+  subscription_id String?
+  mp_payment_id   String?                @unique
+  tipo            PurchaseTipo
+  periodicidade   PurchasePeriodicidade?
+  status          PurchaseStatus
+  valor_cents     Int
+  coupon_id       String? // registra o uso do cupom (US-46)
+  criado_em       DateTime               @default(now())
+  atualizado_em   DateTime               @updatedAt
+  user            users                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product         products               @relation(fields: [product_id], references: [id])
+  entitlement     entitlements?          @relation(fields: [entitlement_id], references: [id], onDelete: SetNull)
+  subscription    subscriptions?         @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+  coupon          coupons?               @relation(fields: [coupon_id], references: [id])
+
+  @@index([user_id, status, criado_em(sort: Desc)])
+  @@index([entitlement_id])
+  @@index([subscription_id])
+}
+
+enum SubscriptionStatus {
+  ativa
+  cancelada
+  pausada
+  expirada
+}
+
+model subscriptions {
+  id                 String                @id @default(uuid())
+  user_id            String
+  product_id         String
+  periodicidade      PurchasePeriodicidade
+  mp_subscription_id String                @unique
+  status             SubscriptionStatus
+  acesso_ate         DateTime
+  cancelada_em       DateTime?
+  criado_em          DateTime              @default(now())
+  atualizado_em      DateTime              @updatedAt
+  user               users                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product            products              @relation(fields: [product_id], references: [id])
+  purchases          purchases[]
+  entitlements       entitlements[]
+
+  @@index([user_id, status])
+}
+
+enum WebhookEventProvedor {
+  mercado_pago
+}
+
+enum WebhookEventStatus {
+  recebido
+  processado
+  falhou
+}
+
+model webhook_events {
+  id            String               @id @default(uuid())
+  provedor      WebhookEventProvedor
+  recurso_id    String
+  tipo_evento   String
+  status        WebhookEventStatus
+  payload       Json                 @db.JsonB
+  recebido_em   DateTime             @default(now())
+  processado_em DateTime?
+  tentativas    Int                  @default(0)
+  ultimo_erro   String?
+
+  @@unique([provedor, recurso_id, tipo_evento])
+  @@index([status, recebido_em])
 }
 
 enum CouponTipo {
@@ -412,15 +483,18 @@ enum EntitlementOrigem {
 }
 
 model entitlements {
-  id            String            @id @default(uuid())
-  user_id       String
-  product_id    String
-  origem        EntitlementOrigem
-  acesso_ate    DateTime? // null = permanente (R3); trial: criado_em + 7 dias (P0-1)
-  criado_em     DateTime          @default(now())
-  atualizado_em DateTime          @updatedAt
-  user          users             @relation(fields: [user_id], references: [id])
-  product       products          @relation(fields: [product_id], references: [id])
+  id              String            @id @default(uuid())
+  user_id         String
+  product_id      String
+  subscription_id String?           @unique
+  origem          EntitlementOrigem
+  acesso_ate      DateTime? // null = permanente (R3); trial: criado_em + 7 dias (P0-1)
+  criado_em       DateTime          @default(now())
+  atualizado_em   DateTime          @updatedAt
+  user            users             @relation(fields: [user_id], references: [id])
+  product         products          @relation(fields: [product_id], references: [id])
+  subscription    subscriptions?    @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+  purchases       purchases[]
 
   // gating R1 (modelo-de-dados §3)
   @@index([user_id, product_id])
@@ -476,13 +550,22 @@ model material_edital {
 model user_trilhas {
   // DECISÃO 2026-08-15: modelo de dados define apenas unique(user_id, edital_id);
   // Prisma/PostgreSQL exigem PK → id uuid surrogate adicionado (unique mantido).
-  id        String   @id @default(uuid())
-  user_id   String
-  edital_id String
-  ativo     Boolean
-  criado_em DateTime @default(now())
-  user      users    @relation(fields: [user_id], references: [id])
-  edital    editals  @relation(fields: [edital_id], references: [id])
+  id              String   @id @default(uuid())
+  user_id         String
+  edital_id       String
+  ativo           Boolean
+  // S7.1 (REVISAO-S7-NUCLEO §10 v0.3): cópia EXPLÍCITA de `editals.versao` no
+  // instante da ativação — SEM default (a app preenche no ato). Congela a versão;
+  // o plano em si é lido de `plano_snapshot` (T3/E2E-T2).
+  versao_ativacao Int
+  // S7.1 (REVISAO-S7-NUCLEO §10 v0.3): snapshot imutável da composição/ordem da
+  // trilha no instante da ativação — fonte da verdade do plano após republicar o
+  // edital. `disciplinas:[{id,nome,peso}]`, `materiais:[{id,ordem,disciplina_id}]`
+  // (ordem = materials.ordem; sem material_edital.ordem). Não versiona conteúdo.
+  plano_snapshot  Json     @db.JsonB
+  criado_em       DateTime @default(now())
+  user            users    @relation(fields: [user_id], references: [id])
+  edital          editals  @relation(fields: [edital_id], references: [id])
 
   // T4: múltiplas trilhas ativas permitidas — validar em serviço
   @@unique([user_id, edital_id])

@@ -1,7 +1,7 @@
 # SPEC-NOTIFICACOES — Notificações (email + in-app)
 
-- **Versão**: 0.3
-- **Data**: 2026-08-12
+- **Versão**: 0.4
+- **Data**: 2026-08-19
 - **Status**: [APROVADO — 2026-08-12]
 - **Domínio master**: US-22, US-23 (SPEC master v2.2 §4)
 
@@ -37,11 +37,16 @@ Definir o comportamento das notificações transacionais e informativas: eventos
 | Trilha: revisões pendentes (flashcards, diário) | ✅ (badge) | ❌ (digest opcional) |
 
 ### 3.2 Regras de envio
-- Email: provider transacional (Resend/SES — decisão D-N1); templates por evento; unsubscribe para não-transacionais.
+- Email: **Resend** como provider transacional decidido pelo usuário; templates por evento; unsubscribe para não-transacionais.
 - In-app: central de notificações (lista, não-lidas com badge, marcar como lida, "marcar todas"); persistidas no banco; ordenadas por data desc.
 - Novo material: agrupamento diário (1 email "3 novos materiais em 2 cursos" em vez de 3 emails — D-N2).
 - Expiração: 1 envio por assinatura por ciclo (evita spam em falhas de webhook — idempotência por `notification_key`).
 - Falha de envio: retry com backoff (3 tentativas); falha final logada (sem bloqueio de fluxo).
+
+O ambiente de teste/staging deve usar conta, domínio/remetente e credenciais
+separados da produção no Resend. A decisão do provider está registrada, mas
+domínio, autenticação, configuração e ativação permanecem pendentes nos
+runbooks operacionais.
 
 ### 3.3 Preferências (MVP mínimo)
 - Aluno escolhe: notificações de novo material (email on/off); demais transacionais sempre ligadas.
@@ -83,8 +88,9 @@ Definir o comportamento das notificações transacionais e informativas: eventos
 
 | Data | Decisão |
 |---|---|
-| 2026-08-12 | D-N1: provider de email transacional (Resend/SES) — escolha final em implementação |
+| 2026-08-12 | D-N1: provider transacional ainda pendente naquele momento |
 | 2026-08-12 | D-N2: digest diário agrupado para novos materiais |
+| 2026-08-19 | D-N1 consolidada: **Resend** escolhido pelo usuário; configuração operacional permanece pendente |
 
 ---
 
@@ -96,3 +102,4 @@ Definir o comportamento das notificações transacionais e informativas: eventos
 | 0.2 | 2026-08-12 | Relatório semanal de estudos (US-36) |
 | 0.3 | 2026-08-12 | **US-36 removida do escopo** (decisão do usuário); volta a cobrir US-22/US-23 |
 | 0.3 | 2026-08-12 | **APROVADA** — revisão de aplicabilidade concluída |
+| 0.4 | 2026-08-19 | Provider transacional consolidado como Resend; separação de staging/teste e produção registrada sem concluir gates operacionais |

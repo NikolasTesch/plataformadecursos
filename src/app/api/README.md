@@ -20,13 +20,13 @@ src/app/api/            # Flat exceto auth/ até o S1; demais subpastas criadas 
 └── sync-offline/       # S3/S7 — sincronização de fila offline
 ```
 
-### Sub-rotas planejadas (enumeradas, NÃO criadas ainda — exceto `auth/[...nextauth]`)
+### Sub-rotas planejadas e implementadas
 
 | Sub-rota | Finalidade | Slice | Fonte |
 |---|---|---|---|
 | `auth/[...nextauth]` | **EXISTE** (S1): re-exporta `{ GET, POST }` de `NextAuth(auth)` — handlers de autenticação do Auth.js v5 | S1 ✓ | todo 7 |
 | `webhooks/pagamentos` | Callbacks do Mercado Pago: validação HMAC, eventos de pagamento/assinatura, idempotência por `payment_id`/`subscription_id` | S6 | SPEC-pagamentos.md:59-67 |
-| `webhooks/video` | Callback de transcodificação do Bunny: atualiza estado do material (`processando` → `pronto`/`erro`) | S5 | SPEC-video.md:34 |
+| `webhooks/video` | **IMPLEMENTADO (S5, primeira fatia)**: valida HMAC v1 e atualiza estado do material (`processando` → `pronto`/`erro`) | S5 | SPEC-video.md:30-34 |
 | `downloads` | Download em lote de curso (ZIP), URL assinada com validade de 24h, gating na solicitação e no download | S3/S7 | SPEC-aluno.md:76-77 |
 | `lgpd` | Exportação (ZIP de dados pessoais, download único em até 24h) e exclusão de conta | S8 | SPEC-auth.md:55-56 |
 | `sync-offline` | Sincronização de operações offline enfileiradas (conclusão, anotações, respostas), retry e conflito last-write-wins | S3/S7 | SPEC-aluno.md:68 |

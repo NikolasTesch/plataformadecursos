@@ -6,7 +6,7 @@
 // emitidas é feita via tokenVersion (quando o admin bloqueia, o bump invalida
 // todos os JWTs). O enforcement Node dessa revogação é o verificarSessaoValida
 // (src/lib/auth/verificar-sessao.ts), usado em pages/actions/route handlers —
-// nunca no middleware/Edge (BLOCKER-1).
+// nunca no proxy/Edge (BLOCKER-1).
 import { signOut } from "@/lib/auth/auth";
 
 export async function logout(): Promise<void> {

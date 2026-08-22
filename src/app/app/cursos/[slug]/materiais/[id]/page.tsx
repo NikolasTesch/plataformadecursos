@@ -34,6 +34,9 @@ import { obterProgressoMaterial, progressoCurso } from "@/services/aluno/progres
 import { ProgressoToggle } from "@/components/app/ProgressoToggle";
 import { criarAnotacaoAction } from "@/app/app/anotacoes/actions";
 import { listarPorMaterial } from "@/services/aluno/anotacoes";
+import { obterDadosPlayer } from "@/services/aluno/progresso";
+import { VideoPlayer } from "@/components/player/VideoPlayer";
+import { gerarUrlEmbedVideo } from "@/lib/video";
 
 interface Props {
   params: Promise<{ slug: string; id: string }>;
@@ -141,6 +144,17 @@ export default async function PaginaLeituraMaterial({ params }: Props) {
     progressoCurso(session.user.id, curso.id),
     listarPorMaterial(session.user.id, m.id),
   ]);
+  const dadosPlayer = m.tipo === "video"
+    ? await obterDadosPlayer(session.user.id, m.id)
+    : null;
+  let videoSrc: string | null = null;
+  if (m.tipo === "video" && material.video_status === "pronto" && material.video_provider_id) {
+    try {
+      videoSrc = gerarUrlEmbedVideo(material.video_provider_id).url;
+    } catch {
+      videoSrc = null;
+    }
+  }
   return (
     <main className="mx-auto max-w-[72ch] px-6 py-10">
       <header className="mb-8">
@@ -188,11 +202,13 @@ export default async function PaginaLeituraMaterial({ params }: Props) {
         ))}
 
       {m.tipo === "video" && (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-neutral-300 p-10 text-center">
-          <p className="text-sm text-neutral-500">
-            Vídeo disponível no S5 (player Bunny Stream).
-          </p>
-        </div>
+        videoSrc && dadosPlayer ? (
+          <VideoPlayer src={videoSrc} materialId={m.id} retomadaSegundos={dadosPlayer.posicaoRetomadaSegundos} />
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+            <p className="text-sm text-slate-500">Este vídeo ainda está sendo processado.</p>
+          </div>
+        )
       )}
 
       {m.tipo === "questoes" && (

@@ -46,5 +46,5 @@ O **app-shell** (SPEC-frontend.md:97-100):
 - Rotas e layouts do app-shell: [docs/specs/SPEC-frontend.md](docs/specs/SPEC-frontend.md):83-85,:97-100,:104.
 - Navegação e gating da área do aluno: [docs/specs/SPEC-aluno.md](docs/specs/SPEC-aluno.md):32-44.
 - Regras de conteúdo (R1–R12) e US de aluno na spec master: [docs/SPEC.md](docs/SPEC.md).
-- Proteção de rota por role (aluno) em `src/middleware.ts`: SPEC-frontend.md:89.
+- Proteção de rota por role (aluno) em `src/proxy.ts`: SPEC-frontend.md:89.
 - Armadilha: nomes de rotas em pt-BR (ex.: `/app/questoes`), mas segmentos dinâmicos de dados em inglês no banco (`[slug]`, `[id]`, `[editalId]`).

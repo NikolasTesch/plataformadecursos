@@ -1,7 +1,7 @@
 // Testes unitários da config de auth SPLIT (edge-safe × Node) — auth-config.test.ts.
 //
 // Cobrem o contrato descoberto no todo 7 (learnings) e a regra BLOCKER-1 do
-// plano S1: o middleware (Edge) importa APENAS auth.config.ts, que NÃO pode
+// plano S1: o proxy (Edge) importa APENAS auth.config.ts, que NÃO pode
 // ter db/Prisma/argon2 no top-level. Por isso os testes têm DUAS camadas:
 //
 // 1. CHECKS ESTÁTICOS (fs.readFileSync) — o gate de segurança da divisão:
@@ -38,6 +38,11 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("argon2", () => ({ verify: verifyMock }));
 
+vi.mock("next-auth", () => ({
+  default: () => ({ handlers: {}, auth: vi.fn(), signIn: vi.fn(), signOut: vi.fn() }),
+}));
+
+import { credentialsProvider } from "@/lib/auth/auth";
 import { authConfig } from "@/lib/auth/auth.config";
 import { verificarSessaoValida } from "@/lib/auth/verificar-sessao";
 
@@ -57,7 +62,7 @@ type ProviderComOptions = CredentialsConfig & {
   options: { authorize: CredentialsConfig["authorize"] };
 };
 
-const provider = authConfig.providers[0] as ProviderComOptions;
+const provider = credentialsProvider as ProviderComOptions;
 
 /** Usuário fake — campos que o authorize lê do Prisma (users). */
 interface UsuarioFake {
@@ -120,24 +125,22 @@ describe("BLOCKER-1 — auth.config.ts é edge-safe (sem db/Prisma/argon2 no top
     });
 
     // O coração do gate: qualquer import estático de db/Prisma/argon2 aqui
-    // quebraria o bundle Edge do middleware (BLOCKER-1).
-    expect(especificadores).toEqual(["next-auth", "next-auth/providers/credentials"]);
+    // quebraria o bundle Edge do proxy (BLOCKER-1).
+    expect(especificadores).toEqual(["next-auth"]);
   });
 
-  it("db/argon2 entram SÓ via dynamic import LAZY dentro do corpo do authorize", () => {
-    const src = fs.readFileSync(CAMINHO_AUTH_CONFIG, "utf8");
+  it("db/argon2 não aparecem na config Edge e ficam no wrapper Node", () => {
+    const edgeSrc = fs.readFileSync(CAMINHO_AUTH_CONFIG, "utf8");
+    const nodeSrc = fs.readFileSync(CAMINHO_AUTH, "utf8");
+    const edgeCode = edgeSrc
+      .split("\n")
+      .map((line) => line.replace(/\/\/.*$/, ""))
+      .join("\n");
 
-    // Os dois lazy imports EXISTEM (são o mecanismo de acesso em runtime).
-    expect(src).toContain('await import("@/lib/db")');
-    expect(src).toContain('await import("argon2")');
-
-    // E aparecem DEPOIS da declaração do authorize — nunca no top-level.
-    const posAuthorize = src.indexOf("authorize:");
-    const posDbLazy = src.indexOf('await import("@/lib/db")');
-    const posArgon2Lazy = src.indexOf('await import("argon2")');
-    expect(posAuthorize).toBeGreaterThan(0);
-    expect(posDbLazy).toBeGreaterThan(posAuthorize);
-    expect(posArgon2Lazy).toBeGreaterThan(posAuthorize);
+    expect(edgeCode).not.toContain("@/lib/db");
+    expect(edgeCode).not.toContain("argon2");
+    expect(nodeSrc).toContain('from "@/lib/db"');
+    expect(nodeSrc).toContain('from "argon2"');
   });
 
   it("PrismaClient/PrismaAdapter/PrismaPg NÃO aparecem no CÓDIGO do auth.config (nem lazy)", () => {
@@ -159,8 +162,8 @@ describe("BLOCKER-1 — auth.config.ts é edge-safe (sem db/Prisma/argon2 no top
 });
 
 describe("split-config — 1 provider Credentials; invariantes de sessão só no wrapper Node (auth.ts)", () => {
-  it("authConfig expõe exatamente 1 provider do tipo credentials", () => {
-    expect(authConfig.providers).toHaveLength(1);
+  it("authConfig Edge não expõe provider Node; auth.ts expõe Credentials", () => {
+    expect(authConfig.providers).toHaveLength(0);
     expect(provider.type).toBe("credentials");
   });
 
@@ -245,7 +248,7 @@ describe("authorize — caminhos de rejeição e sucesso (db + argon2 mockados)"
   });
 });
 
-describe("verificarSessaoValida (enforcement NODE — BLOCKER-1: nunca no middleware)", () => {
+describe("verificarSessaoValida (enforcement NODE — BLOCKER-1: nunca no proxy)", () => {
   it("sem sessão (null/undefined) → inválida, sem consulta ao banco", async () => {
     await expect(verificarSessaoValida(null)).resolves.toBe(false);
     await expect(verificarSessaoValida(undefined)).resolves.toBe(false);

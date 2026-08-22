@@ -1,6 +1,6 @@
 // Layout ADMIN-SHELL — painel administrativo (SPEC-frontend.md:102).
 //
-// Fino por contrato: o middleware (src/middleware.ts) já protege /admin/*
+// Fino por contrato: o proxy (src/proxy.ts) já protege /admin/*
 // por role; este layout reforça a autorização no servidor com `requireRole`
 // (defesa em profundidade — AGENTS.md §6: autorização sempre validada no
 // servidor) e redireciona para /login quando a sessão não é admin.

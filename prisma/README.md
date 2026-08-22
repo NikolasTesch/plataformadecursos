@@ -12,11 +12,11 @@ prisma/
 ├── schema.prisma        # Declaração completa do banco — 30 models, 18 enums (S1)
 ├── prisma.config.ts     # Config do Prisma 7: datasource + migrations.seed ("tsx prisma/seed.ts")
 ├── seed.ts              # Seed idempotente: admin + aluno demo (argon2id), upsert com reset
-└── migrations/          # Migrations geradas pela tooling do Prisma (20260815133031_init)
+└── migrations/          # Migrations incrementais (inclui índice único Bunny do S5)
 ```
 
 - `schema.prisma` vive na raiz da pasta; é a fonte declarativa das tabelas PostgreSQL.
-- `migrations/` é **auto-gerada pela tooling do Prisma** (`prisma migrate dev`) — nunca criar arquivos de migration à mão.
+- `migrations/` versiona mudanças incrementais; a migration S5 do índice Bunny inclui uma guarda não destrutiva para bancos existentes.
 - No Prisma 7, o seed **não** fica mais no `package.json`: a configuração vive em `prisma.config.ts` (`migrations.seed`), executada por `npm run db:seed`.
 
 ## Decisões tomadas
@@ -30,6 +30,8 @@ prisma/
 | 2026-08-15 | Driver adapter OBRIGATÓRIO no Prisma 7: `@prisma/adapter-pg` + `PrismaPg` no singleton `src/lib/db.ts` (todo 4) |
 | 2026-08-15 | Seed config em `prisma.config.ts` (`migrations.seed: "tsx prisma/seed.ts"`), não no package.json (D13, Prisma 7) |
 | 2026-08-15 | Seed idempotente (upsert com reset de `bloqueado`/`tokenVersion`) + argon2 nativo; senhas dev `Admin@1234`/`Aluno@1234` (D12–D15) |
+| 2026-08-19 | `materials.video_provider_id` tornou-se unique nullable com migration segura S5 |
+| 2026-08-19 | Constraint raw `materials_video_publicado_pronto_check` reforça R11 no PostgreSQL |
 
 ## Informações úteis
 

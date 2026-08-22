@@ -13,14 +13,17 @@ A rota abriga também as subáreas **"Meus erros"** (banco de erros, US-37) e **
 ```
 src/app/app/questoes/
 ├── README.md          # Este arquivo
-└── page.tsx           # Blocos + subáreas "Meus erros" e "Favoritas" (a criar no S2)
+├── page.tsx           # Blocos + subáreas "Meus erros" e "Favoritas"
+├── [id]/page.tsx      # Bloco autorizado ou BloqueadoCard
+├── QuestaoBloco.tsx   # Interação estudo/prova no cliente
+└── actions.ts         # Actions finas, com autorização server-side
 ```
 
 Fluxo: a página lista blocos de questões e oferece as subáreas:
 - **Meus erros** (US-37): questões com última tentativa errada, agrupáveis por disciplina/curso; ações: responder de novo, marcar como favorita, transformar em flashcard; questão sai quando o aluno acerta 2x seguidas (D-Q3, SPEC-questoes.md:52-55).
 - **Favoritas** (US-38): questões marcadas pelo aluno, listadas por disciplina, com opção de re-responder; favoritar não altera banco de erros nem tentativas (SPEC-questoes.md:58-60).
 
-Cada bloco responde via `src/services/questoes`; tentativas são registradas em `attempts` mesmo no modo prova ad-hoc (SPEC-questoes.md:65).
+Cada bloco responde via `src/services/questoes`; tentativas são registradas em `attempts` mesmo no modo prova ad-hoc (SPEC-questoes.md:65). O gating é decidido em `services/questoes/navegacao.ts` antes da consulta das questões. A entrega ad-hoc não cria simulado persistente nem cronômetro; simulados/flashcards persistentes ficam no S7.
 
 ## Decisões tomadas
 
@@ -29,6 +32,7 @@ Cada bloco responde via `src/services/questoes`; tentativas são registradas em 
 | 2026-08-14 | "Meus erros" e "Favoritas" são **subáreas da rota `/app/questoes`** (SPEC-frontend.md:85), não rotas próprias — evita fragmentação e mantém o agrupamento "erros/favoritas" da tabela de rotas |
 | 2026-08-14 | Modo prova ad-hoc não cria simulado persistente — não entra no histórico de simulados; tentativas individuais ainda registradas (SPEC-questoes.md:65) |
 | 2026-08-14 | Erros resolvidos ao acertar 2x seguidas (D-Q3); integração flashcard disponível nas ações do banco de erros (SPEC-questoes.md:53-54) |
+| 2026-08-19 | Rotas S4 implementadas e E2E-Q1..Q5 + gating disponíveis; Q2 validado como entrega ad-hoc; gate técnico e QA manual integrados concluídos |
 
 ## Informações úteis
 

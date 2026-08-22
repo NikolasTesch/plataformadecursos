@@ -1,7 +1,7 @@
 # SPEC — Plataforma de Estudos para Concursos
 
-- **Versão**: 2.5
-- **Data**: 2026-08-13
+- **Versão**: 2.8
+- **Data**: 2026-08-19
 - **Status**: [APROVADA — contrato de implementação ativo]
 - **Formato**: Spec-Driven Development — declarativa, descreve **o que** o sistema deve fazer, nunca **como**. Cada comportamento é verificável e testável.
 
@@ -62,7 +62,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | Vídeo (Bunny Stream, player, posição) | `SPEC-video.md` | ✅ [APROVADO] |
 | Questões e simulados cronometrados | `SPEC-questoes.md` | ✅ [APROVADO] |
 | Área do aluno: navegação, gating, progresso, anotações, certificados, PWA | `SPEC-aluno.md` | ✅ [APROVADO] |
-| Produtos, checkout, webhooks Mercado Pago | `SPEC-pagamentos.md` | ✅ [APROVADO] |
+| Produtos, checkout, webhooks Mercado Pago | `SPEC-pagamentos.md` | ✅ [APROVADO — v0.7, 2026-08-19] |
 | Dashboard e relatórios admin | `SPEC-admin.md` | ✅ [APROVADO] |
 | Trilhas de estudo por edital | `SPEC-trilhas.md` | ✅ [APROVADO] |
 | Flashcards e revisão espaçada | `SPEC-flashcards.md` | ✅ [APROVADO] |
@@ -71,8 +71,10 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | Streak e meta diária de estudo | `SPEC-engajamento.md` | ✅ [APROVADO] |
 | Rastreamento de editais e concursos | `SPEC-editais.md` | ✅ [APROVADO] |
 | Design system e experiência de interface | `SPEC-frontend.md` | ✅ [APROVADO — 2026-08-13] |
-| Landing de alta conversão (rota `/`) | `SPEC-landing.md` | ✅ [APROVADO — 2026-08-13] |
+| Landing de alta conversão (rota `/`) | `SPEC-landing.md` | ✅ [APROVADO — v0.3, 2026-08-19] |
 | Mobile (app nativo) | `SPEC-mobile.md` | [IDEALIZAÇÃO] — não implementar |
+
+As revisões aprovadas mantêm analytics somente por opt-in explícito e cancelamento de assinatura inicialmente via suporte. A revisão financeira v0.7 foi aprovada: assinatura mensal/anual usa Subscriptions/preapproval, venda única usa Checkout Pro, Pix fica restrito à venda única, e o primeiro lançamento comercial permanece condicionado à conclusão de S1–S8. O S6 ainda não foi implementado; nenhum código, schema físico, migration, env ou integração foi alterado por esta aprovação documental.
 
 ### US-01 — Registro de aluno
 **Como** visitante, **quero** criar uma conta **para** acessar a plataforma.
@@ -191,23 +193,26 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 **Como** aluno, **quero** assinar ou comprar um curso **para** liberar acesso.
 
 - Página de preços lista produtos ativos: assinatura + cursos avulsos.
-- Fluxo: escolher produto → checkout Mercado Pago (Checkout Pro) → retorno à plataforma com estado `pendente` ("aguardando confirmação").
+- Fluxo: escolher produto/período → criar compra pendente no servidor → assinatura via Subscriptions/preapproval ou venda única via Checkout Pro → retorno à plataforma com estado `pendente` ("aguardando confirmação").
+- Pix é aceito somente na venda única via Checkout Pro; a assinatura oferece apenas métodos suportados pelo checkout da preapproval.
 - Aluno não pode comprar venda única de um curso que já possui entitlement permanente.
 
 ### US-17 — Webhook processa pagamento
 **Como** sistema, **quero** processar notificações do Mercado Pago **para** conceder/revogar acesso.
 
-- Pagamento aprovado (assinatura): criar/renovar entitlement com `acesso_ate = now + 30 dias`.
+- Pagamento aprovado da assinatura, vinculado à `subscription_id` da preapproval: criar/renovar entitlement com `acesso_ate = now + 30 dias`.
 - Pagamento aprovado (venda única): criar entitlement **permanente** (`acesso_ate = null`).
 - Pagamento recusado/cancelado: nenhum acesso concedido.
 - Processamento idempotente: o mesmo webhook entregue 2x não duplica ou quebra o estado.
 - Webhook é validado (assinatura HMAC) — chamadas não autenticadas são rejeitadas.
+- Eventos `subscription.*` da preapproval e eventos `payment.*` são tratados em fluxos distintos; cancelamento/refund de assinatura preserva acesso até `acesso_ate` quando aplicável.
 
 ### US-18 — Renovação e expiração de assinatura
 **Como** sistema, **quero** manter assinaturas em dia **para** garantir acesso correto.
 
-- Renovação aprovada pelo MP: estende `acesso_ate` +30 dias a partir do fim atual (nunca do presente).
+- Renovação aprovada pelo MP: estende `acesso_ate` +30 dias a partir do fim atual (nunca do presente), por evento de pagamento vinculado à preapproval.
 - Assinatura vencida: acesso revogado automaticamente; materiais voltam a `bloqueado`.
+- Cancelamento de assinatura é solicitado exclusivamente via suporte nesta revisão.
 - Sem notificação por email no MVP (Fase 2).
 
 ### US-19 — Admin acompanha estatísticas
@@ -298,7 +303,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 ### US-34 — Pagamento via Pix
 **Como** aluno, **quero** pagar com Pix **para** usar o meio mais comum no Brasil.
 
-- Pix disponível no Checkout Pro; fluxo de webhook idêntico ao cartão. Detalhe: `SPEC-pagamentos.md`.
+- Pix disponível no Checkout Pro somente para venda única; o fluxo recorrente usa Subscriptions/preapproval e os métodos suportados por seu checkout. Detalhe: `SPEC-pagamentos.md`.
 
 ### US-35 — Streak e meta diária
 **Como** aluno, **quero** ver meus dias seguidos e bater minha meta **para** manter constância.
@@ -448,7 +453,7 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 
 ## 8. Critérios de Aceitação Globais (Definição de Pronto)
 
-1. Todas as US ativas (01–35, 37–48 — US-36 removida) implementadas e verificáveis conforme seus critérios (US 21–48 conforme specs de domínio aprovadas).
+1. Todas as US ativas (01–35, 37–48 — US-36 removida) implementadas e verificáveis conforme seus critérios e o status vigente das specs de domínio.
 2. Testes E2E (Playwright) cobrindo: registro/login, fluxo completo admin (criar curso → módulo → material → publicar), gating (E2E-1 a E2E-7), webhook.
 3. Testes unitários obrigatórios para o motor de gating (R1–R12) e cálculo de progresso.
 4. Seed de dados de exemplo (1 curso, 2 módulos, materiais dos 4 tipos, 1 produto de cada tipo).
@@ -479,3 +484,6 @@ O detalhamento de cada domínio vive em `docs/specs/SPEC-<dominio>.md`. A spec m
 | 2.3 | 2026-08-13 | Índice de specs (§4.1) sincronizado com o estado real (14 domínios [APROVADO], frontend aprovado em 2026-08-13); decisão aberta "nome do produto" resolvida → ConcursFoco |
 | 2.4 | 2026-08-13 | Novo domínio proposto: landing de alta conversão (`SPEC-landing.md` v0.1 [PENDENTE]) — índice §4.1 atualizado |
 | 2.5 | 2026-08-13 | **US-44 a US-48 aprovadas**: sales page por curso (US-44), cupons de desconto (US-45/46), avaliações de curso + moderação (US-47/48); SPEC-landing aprovada; specs de domínio revisadas (conteudo 0.3, pagamentos 0.3, comunidade 0.2) |
+| 2.6 | 2026-08-19 | `SPEC-landing.md` v0.3 e `SPEC-pagamentos.md` v0.5 aprovadas; preservados opt-in explícito de analytics, cancelamento inicialmente via suporte e lançamento comercial somente após S1–S8. |
+| 2.7 | 2026-08-19 | Revisão financeira `SPEC-pagamentos.md` v0.7 [PENDENTE — AGUARDANDO APROVAÇÃO]: Subscriptions/preapproval para assinaturas, Checkout Pro para venda única, Pix somente na venda única, webhooks distintos e S6 bloqueado até aprovação. |
+| 2.8 | 2026-08-19 | **APROVADO**: `SPEC-pagamentos.md` v0.7 aprovado explicitamente; S6 permanece não implementado e o lançamento continua condicionado a S1–S8. |

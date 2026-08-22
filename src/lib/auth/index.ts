@@ -1,7 +1,7 @@
 // Helpers de sessão/role — src/lib/auth/index.ts.
 //
 // NODE-ONLY: importam `auth` de ./auth.ts (que carrega PrismaAdapter + db).
-// O middleware NUNCA importa este arquivo (roda no Edge — BLOCKER-1); ele usa
+// O proxy NUNCA importa este arquivo (roda no Edge — BLOCKER-1); ele usa
 // apenas auth.config.ts. Estes helpers são consumidos por services/auth e por
 // route handlers/server components para autorização no servidor (AGENTS.md §6).
 import type { Session } from "next-auth";

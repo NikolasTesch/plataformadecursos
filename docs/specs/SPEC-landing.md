@@ -1,9 +1,11 @@
 # SPEC-LANDING — Landing Page de Alta Conversão
 
-- **Versão**: 0.2
-- **Data**: 2026-08-13
-- **Status**: [APROVADO — 2026-08-13]
+- **Versão**: 0.4
+- **Data**: 2026-08-19
+- **Status**: [APROVADO]
 - **Domínio master**: transversal — aplica-se à rota `/` (e `#precos`, `/sobre`). Define a **experiência pública de conversão** (visitante → cadastro → trial → assinatura/venda única), complementando `SPEC-frontend.md` (tokens/componentes), `DESIGN.md` (§13 linguagem editorial) e `SPEC-pagamentos.md` (planos).
+
+> **Revisão v0.4 aprovada em 2026-08-19:** analytics usa Vercel Analytics com opt-in explícito; GA4 não é uma decisão ativa. O cancelamento de assinatura deve ser solicitado inicialmente via suporte.
 
 ---
 
@@ -28,7 +30,7 @@ Princípio de design (DESIGN.md §13): **próximo passo dominante** — o visita
 | # | Seção | Conteúdo | Objetivo |
 |---|---|---|---|
 | 0 | **Topbar fixa** | Logo ConcursFoco · nav (Cursos, Planos, FAQ) · "Entrar" (ghost) · CTA "Começar trial grátis" | Navegação + CTA sempre visível |
-| 1 | **Hero** | Eyebrow ("Conteúdo para concursos") · H1 de valor · subheadline · CTA primário (trial 7 dias, sem cartão) · microcopy de confiança ("Cancele quando quiser") · visual: app em destaque (ilustração duotone — DESIGN §5) | Capturar atenção em < 3s |
+| 1 | **Hero** | Eyebrow ("Conteúdo para concursos") · H1 de valor · subheadline · CTA primário (trial 7 dias, sem cartão) · microcopy de confiança ("Solicite o cancelamento pelo suporte") · visual: app em destaque (ilustração duotone — DESIGN §5) | Capturar atenção em < 3s |
 | 2 | **Barra de prova social** | Números (alunos ativos, materiais publicados, questões resolvidas) — **somente com dados reais** (ver R-L3) · logos/marcas de bancas cobertas | Credibilidade |
 | 3 | **Problema** | Dor do concurseiro (materiais espalhados, sem progresso, desistência) em contraste com a solução | Empatia → desejo |
 | 4 | **Como funciona** | 3 passos: Cadastre → Estude com plano → Acompanhe seu progresso · ou grid de features (5 tipos de material, trilhas por edital, simulados, flashcards, streak) | Entendimento do produto |
@@ -62,7 +64,7 @@ Cada curso publicado gera uma página pública `/cursos/[slug]` (público):
 
 ### R-L4 — Redução de risco explícita
 Microcopy obrigatório nos pontos de decisão (hero, planos, CTA final):
-- "Sem cartão para começar" (trial) · "Cancele quando quiser" · "Pagamento seguro via Mercado Pago (Pix e cartão)" · "Seus dados protegidos (LGPD)".
+- "Sem cartão para começar" (trial) · "Solicite o cancelamento pelo suporte" · "Pagamento seguro via Mercado Pago (Pix e cartão)" · "Seus dados protegidos (LGPD)".
 
 ### R-L5 — FAQ estruturado
 - Perguntas mínimas obrigatórias: (1) Como funciona o trial? (2) Posso cancelar a assinatura? (3) O que está incluído na assinatura? (4) Como recebo o certificado? (5) Posso acessar pelo celular? (6) Posso baixar os materiais?
@@ -78,8 +80,9 @@ Microcopy obrigatório nos pontos de decisão (hero, planos, CTA final):
 - Depoimentos, números de prova social e FAQ geridos pelo admin (CRUD simples — mesmo padrão de US-19/US-31) OU conteúdo versionado no repo para MVP (decisão §10).
 - Cursos em destaque: derivados automaticamente dos cursos publicados (sem manutenção manual).
 
-### R-L8 — Analytics de funil (desde o S1)
-Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10):
+### R-L8 — Analytics de funil (após opt-in explícito)
+- Analytics somente pode ser carregado e registrar eventos depois de **opt-in explícito** do visitante. A ausência de escolha ou a recusa não pode gerar eventos de analytics.
+- Eventos rastreados (ferramenta decidida: **Vercel Analytics**; GA4 não é decisão ativa), somente após o opt-in:
 - `view_landing` · `click_cta_hero` · `view_precos` · `start_signup` · `signup_complete` · `start_trial` · `checkout_view` · `purchase_approved` (webhook MP).
 - Alimentam as métricas do PRD §8 (conversão visitante→compra, ativação) e o funil do admin (US-19).
 
@@ -100,7 +103,7 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 - Performance: LCP < 2.5s em 4G; landing inteira < 100KB JS (zero dependências pesadas — sem libs de animação).
 - Acessibilidade WCAG 2.1 AA (SPEC-frontend §8): contraste, foco, alt, headings; FAQ em `<details>` nativo.
 - Mobile-first: hero legível em 375px; CTA full-width no mobile; seções com 32px de espaçamento no app-frame mobile.
-- LGPD: formulários com consentimento (reuso do fluxo de cadastro US-01); scripts de analytics com aviso/cookie consent (decisão §10).
+- LGPD: formulários com consentimento (reuso do fluxo de cadastro US-01); scripts de analytics somente após opt-in explícito e com aviso/gerenciamento de consentimento (decisão §10).
 - Dark mode: aplicado automaticamente (DESIGN §12) — sem toggle na landing.
 
 ---
@@ -125,10 +128,10 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 2. 1 CTA primário por viewport (R-L1); todos os CTAs apontam para o fluxo correto (cadastro/checkout/ânsulas).
 3. Prova social exibe somente dados reais ou placeholders neutralizados (R-L3).
 4. FAQ com dados estruturados válidos (validação schema.org) e editável (R-L5/R-L7).
-5. Eventos de funil disparando (R-L8) e visíveis no dashboard admin.
+5. Eventos de funil disparando somente após opt-in explícito (R-L8) e visíveis no dashboard admin.
 6. LCP < 2.5s em 4G (tanto em staging quanto produção).
 7. Sales page de curso público (R-L2) atende ao paywall (nunca expõe conteúdo — R12 da master).
-8. LGPD: consentimento no cadastro e aviso de cookies/analytics.
+8. LGPD: consentimento no cadastro, opt-in explícito para analytics e aviso de cookies.
 
 ---
 
@@ -144,15 +147,17 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 
 ---
 
-## 10. Decisões (2026-08-13 — aprovadas pelo usuário)
+## 10. Decisões e revisão
 
 | # | Decisão | Resolução |
 |---|---|---|
 | L-A1 | Sales page por curso entra no escopo? | **Sim** — nova US-44, entra no S2 (SPEC-conteudo §3.8) |
 | L-A2 | Prova social/depoimentos: admin gerencia (CRUD) ou conteúdo versionado no repo? | **Admin CRUD** — mesmo padrão da gestão de conteúdo (S8) |
-| L-A3 | Ferramenta de analytics | **Vercel Analytics** (simples, sem consentimento extra) |
-| L-A4 | Gestão de consentimento de cookies | **Banner simples** com opt-out de analytics (S1/S2) |
+| L-A3 | Ferramenta de analytics | **Vercel Analytics** somente (uso condicionado ao opt-in explícito; GA4 não é decisão ativa) |
+| L-A4 | Gestão de consentimento de cookies | **Banner simples** com opt-in explícito de analytics (revisão v0.3) |
 | L-A5 | FAQ: conteúdo da landing ou domínio próprio (suporte)? | **Conteúdo da landing** — reavaliar quando existir volume de suporte |
+| L-A6 | Analytics antes de consentimento | **Não permitido** — nenhum carregamento ou evento sem opt-in explícito |
+| L-A7 | Status da revisão | **Aprovada em 2026-08-19** — implementação autorizada conforme esta revisão |
 
 ---
 
@@ -162,3 +167,5 @@ Eventos rastreados (decisão de ferramenta: Vercel Analytics / GA4 — ver §10)
 |---|---|---|
 | 0.1 | 2026-08-13 | Versão inicial para aprovação — planejamento de alta conversão (funil §3, CRO §4, SEO/analytics §6/§7, A/B §5) |
 | 0.2 | 2026-08-13 | **APROVADO** pelo usuário; decisões §10 resolvidas (sales page S2, admin CRUD S8, Vercel Analytics, banner de consentimento, FAQ na landing) |
+| 0.3 | 2026-08-19 | **APROVADO** pelo usuário: opt-in explícito para analytics e cancelamento inicialmente via suporte. |
+| 0.4 | 2026-08-19 | Vercel Analytics consolidado como única decisão ativa de analytics; GA4 removido como opção ativa, mantendo opt-in explícito. |

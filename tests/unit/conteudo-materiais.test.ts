@@ -21,7 +21,6 @@ import type {
   MaterialStatus,
   MaterialTipo,
   modules,
-  VideoStatus,
 } from "@/generated/prisma/client";
 
 const mocksDb = vi.hoisted(() => ({
@@ -103,6 +102,7 @@ function criarDbFake(opcoes: {
   amostras?: number;
   maxOrdem?: number | null;
   lista?: materials[];
+  atualizacaoCondicional?: number;
 } = {}) {
   const {
     modulo = criarModuloFake(),
@@ -112,6 +112,7 @@ function criarDbFake(opcoes: {
     amostras = 0,
     maxOrdem = null,
     lista = [],
+    atualizacaoCondicional = 1,
   } = opcoes;
 
   const modulesFindUnique = vi.fn<DbMateriais["modules"]["findUnique"]>(
@@ -122,6 +123,7 @@ function criarDbFake(opcoes: {
   );
   const create = vi.fn<DbMateriais["materials"]["create"]>(async () => criado);
   const update = vi.fn<DbMateriais["materials"]["update"]>(async () => atualizado);
+  const updateMany = vi.fn<DbMateriais["materials"]["updateMany"]>(async () => ({ count: atualizacaoCondicional }));
   const findMany = vi.fn<DbMateriais["materials"]["findMany"]>(
     async () => lista,
   );
@@ -137,6 +139,7 @@ function criarDbFake(opcoes: {
         findUnique: materialsFindUnique,
         create,
         update,
+        updateMany,
         findMany,
         count,
         aggregate,
@@ -146,6 +149,7 @@ function criarDbFake(opcoes: {
     materialsFindUnique,
     create,
     update,
+    updateMany,
     findMany,
     count,
     aggregate,
@@ -227,7 +231,7 @@ describe("criarMaterial (US-05/06/09/40)", () => {
     expect(argsCreate.data.conteudo_busca).toBe("aula 1 - pdf");
   });
 
-  it("cria material video com video_provider_id e video_status", async () => {
+  it("cria material video como rascunho sem dados do provedor", async () => {
     const { db, create } = criarDbFake();
 
     await criarMaterial(
@@ -235,40 +239,14 @@ describe("criarMaterial (US-05/06/09/40)", () => {
         module_id: "mod-fake-1",
         titulo: "Vídeo 1",
         tipo: "video",
-        video_provider_id: "bunny-abc-123",
-        video_status: "processando",
       },
       { db },
     );
 
     const argsCreate = create.mock.calls[0][0];
-    expect(argsCreate.data.video_provider_id).toBe("bunny-abc-123");
-    expect(argsCreate.data.video_status).toBe("processando");
+    expect(argsCreate.data.video_provider_id).toBeNull();
+    expect(argsCreate.data.video_status).toBeNull();
     expect(argsCreate.data.conteudo_busca).toBeNull(); // video: sem corpo pesquisável
-  });
-
-  it("rejeita video sem video_provider_id (estrutura do tipo)", async () => {
-    const { db, create } = criarDbFake();
-
-    await expect(
-      criarMaterial(
-        { module_id: "mod-fake-1", titulo: "Vídeo", tipo: "video", video_status: "processando" },
-        { db },
-      ),
-    ).rejects.toMatchObject({ code: "validacao", campo: "video_provider_id" });
-    expect(create).not.toHaveBeenCalled();
-  });
-
-  it("rejeita video sem video_status (estrutura do tipo)", async () => {
-    const { db, create } = criarDbFake();
-
-    await expect(
-      criarMaterial(
-        { module_id: "mod-fake-1", titulo: "Vídeo", tipo: "video", video_provider_id: "bunny-1" },
-        { db },
-      ),
-    ).rejects.toMatchObject({ code: "validacao", campo: "video_status" });
-    expect(create).not.toHaveBeenCalled();
   });
 
   it("cria material questoes (placeholder estrutural — sem campos obrigatórios)", async () => {
@@ -339,8 +317,6 @@ describe("criarMaterial (US-05/06/09/40)", () => {
         module_id: "mod-fake-1",
         titulo: "Vídeo quebrado",
         tipo: "video",
-        video_provider_id: "bunny-1",
-        video_status: "erro",
         status: "publicado",
       },
       { db },
@@ -349,7 +325,7 @@ describe("criarMaterial (US-05/06/09/40)", () => {
     expect(erro).toBeInstanceOf(ErroConteudo);
     expect(erro).toMatchObject({
       code: "regra_negocio",
-      mensagem: "o vídeo precisa ser processado com sucesso para publicar",
+      mensagem: "o vídeo ainda não está pronto para publicação",
     });
     expect(create).not.toHaveBeenCalled();
   });
@@ -516,6 +492,34 @@ describe("atualizarMaterial (US-06)", () => {
     });
     expect(update).not.toHaveBeenCalled();
   });
+
+  it("R11: editar vídeo publicado processando também é bloqueado", async () => {
+    const material = criarMaterialFake({ tipo: "video", status: "publicado", video_status: "processando" });
+    const { db, update } = criarDbFake({ material });
+
+    await expect(atualizarMaterial("mat-fake-1", { titulo: "Novo título" }, { db })).rejects.toMatchObject({
+      code: "regra_negocio",
+      mensagem: "o vídeo ainda está sendo processado e não pode ser publicado",
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("editar vídeo para publicado usa CAS rascunho + pronto", async () => {
+    const material = criarMaterialFake({ tipo: "video", status: "rascunho", video_status: "pronto" });
+    const { db, updateMany, update } = criarDbFake({ material });
+
+    await atualizarMaterial("mat-fake-1", { titulo: "Título novo", status: "publicado" }, { db });
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: "mat-fake-1", status: "rascunho", tipo: "video", video_status: "pronto" },
+      data: expect.objectContaining({
+        titulo: "Título novo",
+        status: "publicado",
+        publicado_em: expect.any(Date),
+      }),
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
 });
 
 describe("publicarMaterial (US-09 + R11)", () => {
@@ -564,12 +568,42 @@ describe("publicarMaterial (US-09 + R11)", () => {
 
   it("video com video_status pronto → publica ok", async () => {
     const material = criarMaterialFake({ tipo: "video", video_status: "pronto", status: "rascunho" });
-    const { db, update } = criarDbFake({ material });
+    const { db, updateMany } = criarDbFake({ material });
 
     await publicarMaterial("mat-fake-1", { db });
 
-    expect(update).toHaveBeenCalledTimes(1);
-    expect(update.mock.calls[0][0].data.status).toBe("publicado");
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "mat-fake-1",
+        status: "rascunho",
+        tipo: "video",
+        video_status: "pronto",
+      },
+      data: expect.objectContaining({ status: "publicado", publicado_em: expect.any(Date) }),
+    });
+  });
+
+  it("vídeo perde a disputa de publicação → não faz fallback para update incondicional", async () => {
+    const material = criarMaterialFake({ tipo: "video", video_status: "pronto", status: "rascunho" });
+    const { db, update, updateMany } = criarDbFake({ material, atualizacaoCondicional: 0 });
+
+    await expect(publicarMaterial("mat-fake-1", { db })).rejects.toMatchObject({
+      code: "regra_negocio",
+      mensagem: "o vídeo foi alterado por outra operação e não foi publicado",
+    });
+    expect(updateMany).toHaveBeenCalledTimes(1);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("R11: video ainda processando → regra_negocio, status inalterado", async () => {
+    const material = criarMaterialFake({ tipo: "video", video_status: "processando", status: "rascunho" });
+    const { db, update } = criarDbFake({ material });
+
+    await expect(publicarMaterial("mat-fake-1", { db })).rejects.toMatchObject({
+      code: "regra_negocio",
+      mensagem: "o vídeo ainda está sendo processado e não pode ser publicado",
+    });
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("material inexistente → nao_encontrado", async () => {

@@ -1,8 +1,8 @@
 # SPEC-TRILHAS — Trilhas de Estudo por Edital
 
-- **Versão**: 0.2
-- **Data**: 2026-08-12
-- **Status**: [APROVADO — 2026-08-12]
+- **Versão**: 0.3
+- **Data**: 2026-08-12 (atualizado para snapshot em 2026-08-19)
+- **Status**: [APROVADO — 2026-08-12; atualizado para snapshot em 2026-08-19]
 - **Domínio master**: US-25 (SPEC master v2.2 §4)
 
 ---
@@ -32,6 +32,7 @@ Definir o comportamento das trilhas de estudo construídas a partir de editais: 
 ### 3.2 Aluno: uso da trilha
 - Ativar trilha: a partir da página do edital publicado; **aluno pode ter múltiplas trilhas ativas simultaneamente** (D-T2) — útil para quem estuda para mais de um concurso; progresso é independente por trilha.
 - Plano da trilha: materiais ordenados por (peso da disciplina desc, ordem dentro da disciplina); progresso por disciplina (% concluído) e progresso geral da trilha.
+- Plano da trilha (fonte): após a ativação, o plano do aluno é lido de um **snapshot imutável** (`user_trilhas.plano_snapshot`) que congela disciplinas (`id`, `nome`, `peso`) e materiais (`id`, `ordem` — sendo `ordem` a `materials.ordem` existente, não há `material_edital.ordem`) no instante da ativação. Ao republicar o edital, alunos com trilha ativa mantêm o snapshot; novos alunos geram snapshot da nova versão (T3/E2E-T2). O snapshot preserva **composição e ordem**, não o conteúdo dos materiais.
 - Conclusão da trilha: 100% dos materiais acessíveis concluídos → selo "trilha concluída" (sem certificado — certificado é por curso, US-29).
 - Materiais bloqueados (sem entitlement) aparecem no plano com estado bloqueado; não contam no denominador de progresso (mesma regra AL1).
 - Aluno sem acesso a materiais da trilha vê o plano com CTAs de compra/assinatura.
@@ -48,6 +49,8 @@ Definir o comportamento das trilhas de estudo construídas a partir de editais: 
 | T4 | Aluno pode ter **múltiplas trilhas ativas**; progresso independente por trilha. |
 | T5 | Progresso da trilha segue AL1 (bloqueados fora do denominador). |
 
+> **T3 — implementação por snapshot (2026-08-19)**: a preservação da v1 do aluno não é feita por `versao_ativacao` isolada (o contador `editals.versao` é sobrescrito na republicação e a tabela `editals` não guarda histórico). O contrato é `user_trilhas.plano_snapshot JsonB` criado **junto com** `versao_ativacao` (cópia explícita, sem default) na ativação e lido como fonte do plano após republicar o edital. A `ordem` do material no snapshot é a `materials.ordem` existente. Não há `material_edital.ordem`, tabelas versionadas, scraping, rollback ou auditoria admin.
+
 ---
 
 ## 5. Exemplos End-to-End
@@ -60,7 +63,7 @@ Definir o comportamento das trilhas de estudo construídas a partir de editais: 
 ### E2E-T2 — Versionamento
 **Given** aluno ativou edital v1 (peso de Constitucional = 2)
 **When** admin publica v2 (peso = 3)
-**Then** o aluno mantém o plano v1; novos alunos veem v2
+**Then** o aluno mantém o plano v1 (lido do `plano_snapshot` congelado na ativação); novos alunos veem v2 (snapshot da versão corrente)
 
 ### E2E-T3 — Múltiplas trilhas ativas
 **Given** aluno com trilha "TRT" ativa
@@ -75,6 +78,7 @@ Definir o comportamento das trilhas de estudo construídas a partir de editais: 
 |---|---|
 | 2026-08-12 | D-T1: versionamento de editais publicados |
 | 2026-08-12 | D-T2: **múltiplas trilhas ativas** permitidas (decisão do usuário em revisão de pendências) |
+| 2026-08-19 | D-T3: preservação da v1 por `plano_snapshot JsonB` (disciplinas + materiais com `ordem` de `materials.ordem`) criado na ativação junto com `versao_ativacao` explícita; `versao_ativacao` isolada não preserva v1. Sem `material_edital.ordem`. |
 
 ---
 
@@ -85,3 +89,4 @@ Definir o comportamento das trilhas de estudo construídas a partir de editais: 
 | 0.1 | 2026-08-12 | Versão inicial para aprovação |
 | 0.2 | 2026-08-12 | T4: múltiplas trilhas ativas (revisão de pendências) |
 | 0.2 | 2026-08-12 | **APROVADA** — revisão de aplicabilidade concluída |
+| 0.3 | 2026-08-19 | **APROVADA** — atualização para snapshot imutável (`plano_snapshot` + `versao_ativacao` explícita) cumprindo T3/E2E-T2; `versao_ativacao` isolada não preserva v1. Sem `material_edital.ordem`, tabelas versionadas, scraping, rollback ou auditoria admin. |

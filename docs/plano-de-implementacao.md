@@ -1,8 +1,8 @@
 # Plano de Implementação — Slices S1 a S8
 
-- **Versão**: 0.2
-- **Data**: 2026-08-13
-- **Status**: [APROVADO — 2026-08-12 · revisado 2026-08-13]
+- **Versão**: 0.5
+- **Data**: 2026-08-19
+- **Status**: [APROVADO — 2026-08-19]
 - **Método**: SDD — cada slice termina funcional e verificável contra as specs aprovadas (AGENTS.md §2).
 
 ---
@@ -14,11 +14,11 @@ S1 Fundação ──► S2 Conteúdo ──► S3 Aluno core ──► S4 Quest�
                                         │
 S5 Vídeo ◄──── S4                       │
 S6 Pagamentos (independe de S4/S5 — pode paralelizar)
-S7 Expansão (trilhas, simulados, flashcards, comunidade, certificados, PWA, editais)
+S7 Expansão (trilhas, simulados, flashcards, comunidade, PWA, editais)
 S8 Engajamento & dados (streak, notificações, relatório semanal, admin avançado, busca, exportação)
 ```
 
-Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 (auth) e S3 (gating). S7 depende de S2–S5. S8 acumula dados dos anteriores.
+Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 (auth) e S3 (gating). S7.1 (núcleo) depende de S2–S4 e de S5 apenas onde houver reutilização de componentes/serviços; S6 não é requisito para o núcleo. S7.2 (restante) depende de S6 para *entitlements* onde aplicável e da decisão aprovada de jobs/scheduler para PWA (sync offline), geração assíncrona de ZIP e rastreamento/scraping de editais. S8 acumula dados dos anteriores.
 
 ---
 
@@ -78,14 +78,25 @@ Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 
 | **Testes** | Unit: idempotência, R8 (renovação soma ao fim), trial único, validação de cupom (expirado/esgotado/inválido), desconto só na 1ª cobrança. E2E: E2E-P1..P4 (webhook com assinatura válida), E2E-P7/P8 (cupom) |
 | **Saída** | Aluno assina/compra com desconto; acesso concedido/revogado automaticamente |
 
-### S7 — Expansão (trilhas, simulados, flashcards, comunidade, certificados, PWA, editais)
+### S7.1 — Núcleo (trilhas, simulados, flashcards)
 | Item | Conteúdo |
 |---|---|
-| **Escopo** | Trilhas por edital (versionamento T3); simulados cronometrados (entrega automática Q2, histórico Q3); flashcards SM-2 (F1–F4); comentários (CO1–CO5); **avaliações de curso (US-47/48 — nota média + moderação)**; PWA offline (AL4/AL5, download lote ZIP); rastreamento de editais manual + scraping (P0-3) |
-| **Specs** | `SPEC-trilhas.md`, `SPEC-questoes.md` (§simulados), `SPEC-flashcards.md`, `SPEC-comunidade.md` (comentários + avaliações), `SPEC-aluno.md` (§PWA), `SPEC-editais.md` |
-| **US** | US-25, US-27, US-26, US-28, US-30, US-42, US-43, **US-47** (avaliação), **US-48** (moderação) |
-| **Testes** | Unit: T3 (versionamento), Q2 (entrega automática), F1/F2 (intervalos SM-2), fila de sync offline, CO6 (gating de avaliação) e nota média (apenas aprovadas). E2E: E2E-T1..T3, E2E-Q2/Q3, E2E-F1..F3, E2E-AL3, E2E-CO1..CO4 |
-| **Saída** | Produto completo: trilha, simulado, revisão, dúvidas, offline |
+| **Escopo** | Trilhas por edital (versionamento T3); simulados cronometrados (entrega automática Q2, histórico Q3); flashcards SM-2 (F1–F4) |
+| **Specs** | `SPEC-trilhas.md`, `SPEC-questoes.md` (§simulados), `SPEC-flashcards.md` |
+| **US** | US-25, US-27, US-26 |
+| **Testes** | Unit: T3 (versionamento), Q2 (entrega automática), F1/F2 (intervalos SM-2). E2E: E2E-T1..T3, E2E-Q2/Q3, E2E-F1..F3 |
+| **Saída** | Núcleo de estudo independente: trilha por edital, simulado cronometrado e revisão espaçada |
+
+> **Migração (S7.1)**: antes de serviço/UI, aplica-se a migration que, na ativação da trilha, cria `user_trilhas.versao_ativacao int` (cópia **explícita** de `editals.versao`, sem default) e `user_trilhas.plano_snapshot jsonb` (snapshot imutável de disciplinas e materiais, com `ordem` copiada de `materials.ordem`) para cumprir T3/E2E-T2. `versao_ativacao` isolada não preserva v1 — o plano é lido do snapshot, que é a fonte após republicar o edital. A migration seguinte aplica checks/constraints essenciais **apenas se** fizerem parte do contrato planejado. Sem `material_edital.ordem`, tabelas versionadas, scraping, rollback ou auditoria admin. Alinhado a `modelo-de-dados.md` v0.8.
+
+### S7.2 — Restante (comunidade, avaliações, PWA, editais)
+| Item | Conteúdo |
+|---|---|
+| **Escopo** | Comentários (CO1–CO5); avaliações de curso (US-47/48 — nota média + moderação); PWA offline (AL4/AL5, download lote ZIP); rastreamento de editais manual + scraping (P0-3) |
+| **Specs** | `SPEC-comunidade.md` (comentários + avaliações), `SPEC-aluno.md` (§PWA), `SPEC-editais.md` |
+| **US** | US-28, US-30, US-42, US-43, US-47 (avaliação), US-48 (moderação) |
+| **Testes** | Unit: fila de sync offline, CO6 (gating de avaliação) e nota média (apenas aprovadas). E2E: E2E-AL3, E2E-CO1..CO4 |
+| **Saída** | Comunidade, avaliações, offline e editais — após S6 + decisão de jobs/scheduler |
 
 ### S8 — Engajamento & dados (streak, notificações, relatório, admin avançado, busca, exportação)
 | Item | Conteúdo |
@@ -113,3 +124,6 @@ Slices com seta dupla: S5 depende do schema de materials (S2). S6 depende de S1 
 | 0.1 | 2026-08-12 | Versão inicial — 8 slices cobrindo US-01 a US-43 |
 | 0.1 | 2026-08-12 | **APROVADO** — revisão de aplicabilidade concluída |
 | 0.2 | 2026-08-13 | **Revisado** — novas US aprovadas: US-44 (sales page → S2), US-45/46 (cupons → S6), US-47/48 (avaliações → S7) |
+| 0.3 | 2026-08-19 | **APROVADO** — revisão de ordem do S7: divisão em S7.1 (núcleo: trilhas US-25, simulados US-27, flashcards US-26) e S7.2 (restante: comentários US-28, avaliações US-47/48, PWA/ZIP US-30/43, editais US-42); removido "certificados" do S7 (pertence a S3/US-29); S7.1 sem dependência de S6; S7.2 condicionado a S6 (entitlements) e jobs/scheduler. Nenhuma spec de domínio alterada. |
+| 0.4 | 2026-08-19 | **APROVADO** — revisão mínima S7.1: S7.1 inclui migration `user_trilhas.versao_ativacao int` antes de serviço/UI para cumprir T3/E2E-T2 (preservação de v1 no re-publicar do edital); alinhado a `modelo-de-dados.md` v0.7. |
+| 0.5 | 2026-08-19 | **APROVADO** — correção da revisão mínima S7.1: `versao_ativacao` isolada não preserva v1; S7.1 inclui também `user_trilhas.plano_snapshot jsonb` (snapshot imutável, ordem copiada de `materials.ordem`) criado na ativação e lido como fonte do plano; `versao_ativacao` copiada explicitamente (sem default). Alinhado a `modelo-de-dados.md` v0.8. |

@@ -35,6 +35,8 @@ export interface PropsMaterialCard {
     id: string;
     titulo: string;
     tipo: MaterialTipo;
+    /** URL de thumbnail já emitida pelo servidor; sem fallback Bunny no cliente. */
+    thumbnailUrl?: string | null;
   };
   status: StatusMaterialCard;
 }
@@ -65,9 +67,13 @@ export function MaterialCard({ cursoSlug, material, status }: PropsMaterialCard)
       data-status={status}
       className="group flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-        <IconeTipo aria-hidden="true" className="h-4 w-4" />
-      </span>
+      {material.thumbnailUrl ? (
+        <img src={material.thumbnailUrl} alt="" className="h-12 w-20 shrink-0 rounded-md object-cover" />
+      ) : (
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <IconeTipo aria-hidden="true" className="h-4 w-4" />
+        </span>
+      )}
 
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium text-foreground">

@@ -16,6 +16,7 @@ type Fixture = { subscription: Course; purchase: Course; expired: Course; draft:
 
 const SCRIPT = [
   'import "dotenv/config";',
+  'import { randomUUID } from "node:crypto";',
   'import { db } from "../../src/lib/db";',
   'import { despublicarMaterial } from "../../src/services/conteudo/materiais";',
   'const run = process.env["RUN"] ?? "";',
@@ -28,7 +29,7 @@ const SCRIPT = [
   '    const c = await db.courses.create({ data: { nome: `${name} ${run}`, slug: `${name.toLowerCase()}-${run}`, incluido_assinatura: included } }); made.push(c.id);',
   '    const m = await db.modules.create({ data: { course_id: c.id, nome: `Módulo ${run}`, ordem: 1 } });',
   '    const rows = [];',
-  '    for (let i = 0; i < materials.length; i++) { const item = materials[i]; rows.push(await db.materials.create({ data: { module_id: m.id, titulo: `${item.title} ${run}`, tipo: item.type ?? "texto", ordem: i + 1, status: item.draft ? "rascunho" : "publicado", publicado_em: item.draft ? null : new Date(), amostra: item.sample ?? false, conteudo_html: `<p>CONTEUDO_${name}_${run}_${i}</p>` } })); }',
+  '    for (let i = 0; i < materials.length; i++) { const item = materials[i]; rows.push(await db.materials.create({ data: { module_id: m.id, titulo: `${item.title} ${run}`, tipo: item.type ?? "texto", ordem: i + 1, status: item.draft ? "rascunho" : "publicado", publicado_em: item.draft ? null : new Date(), amostra: item.sample ?? false, conteudo_html: `<p>CONTEUDO_${name}_${run}_${i}</p>`, video_provider_id: item.type === "video" ? randomUUID() : undefined, video_status: item.type === "video" ? "pronto" : undefined } })); }',
   '    return { id: c.id, slug: c.slug, materialIds: rows.map((r) => r.id) };',
   '  }',
   '  const subscription = await course("e2e-subscription", true, [{ title: "Assinatura material" }]);',

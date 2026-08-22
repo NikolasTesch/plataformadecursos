@@ -18,7 +18,7 @@ src/app/
     └── verificar-email/[token]/ # página /verificar-email/[token] (S8)
 ```
 
-As páginas aqui são finas: parse da entrada → service de autenticação (`src/services/auth`) → resposta. A autorização é validada no servidor (R7) — a UI apenas esconde o que o servidor já nega. Rotas protegidas são interceptadas por middleware em `src/middleware.ts`.
+As páginas aqui são finas: parse da entrada → service de autenticação (`src/services/auth`) → resposta. A autorização é validada no servidor (R7) — a UI apenas esconde o que o servidor já nega. Rotas protegidas são interceptadas pelo proxy em `src/proxy.ts`.
 
 ## Decisões tomadas
 

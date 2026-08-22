@@ -5,7 +5,7 @@
 // revogação: invalida TODOS os JWTs emitidos antes do bloqueio imediatamente.
 // A verificação em runtime é feita em Node pelo verificarSessaoValida
 // (src/lib/auth/verificar-sessao.ts) a cada requisição protegida — nunca no
-// middleware/Edge (BLOCKER-1). Desbloquear apenas limpa a flag `bloqueado`,
+// proxy/Edge (BLOCKER-1). Desbloquear apenas limpa a flag `bloqueado`,
 // SEM rotacionar o tokenVersion (US-20: desbloqueio não exige nova senha nem
 // re-login).
 import { db } from "@/lib/db";

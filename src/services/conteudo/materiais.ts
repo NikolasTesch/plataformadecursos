@@ -1,15 +1,14 @@
 // Serviço de materiais — US-05/06/09/40 (SPEC-conteudo §3.3-3.6).
 //
 // CRUD de materiais por tipo: `pdf` (arquivo_key após upload — C3), `texto`/
-// `resumo` (conteudo_html), `video` (video_provider_id + video_status, apenas
-// estrutura — comportamento de vídeo é S5) e `questoes` (placeholder estrutural
+// `resumo` (conteudo_html), `video` (estrutura inicial sem upload) e `questoes` (placeholder estrutural
 // — comportamento é S4). Campos comuns: titulo (obrigatório), `ordem` (default
 // = max+1 dentro do módulo, mesmo padrão de módulos), `status`
 // (rascunho|publicado), `amostra` (máx. 1 por curso — C2).
 //
 // Publicação (US-09): rascunho→publicado registra `publicado_em = now`; já
-// publicado → no-op idempotente. R11: material `video` com video_status `erro`
-// NÃO pode ser publicado. Despublicar (R5): efeito imediato — status → rascunho;
+// publicado → no-op idempotente. R11: material `video` só pode ser publicado com
+// video_status `pronto`; `processando` e `erro` bloqueiam. Despublicar (R5): efeito imediato — status → rascunho;
 // `publicado_em` é MANTIDO (histórico) e um novo publicar o atualiza de novo.
 //
 // `conteudo_busca` (migration S2 todo 1, schema.prisma): texto puro lowercased
@@ -68,11 +67,28 @@ export interface DbMateriais {
         amostra?: boolean;
         conteudo_html?: string | null;
         arquivo_key?: string | null;
-        video_provider_id?: string | null;
-        video_status?: VideoStatus | null;
         conteudo_busca?: string | null;
       };
     }) => Promise<materials>;
+    updateMany: (args: {
+      where: {
+        id: string;
+        status: "rascunho";
+        tipo: "video";
+        video_status: "pronto";
+      };
+      data: {
+        status: "publicado";
+        publicado_em: Date;
+        titulo?: string;
+        tipo?: MaterialTipo;
+        ordem?: number;
+        amostra?: boolean;
+        conteudo_html?: string | null;
+        arquivo_key?: string | null;
+        conteudo_busca?: string | null;
+      };
+    }) => Promise<{ count: number }>;
     count: (args: {
       where: {
         amostra: true;
@@ -96,8 +112,6 @@ export interface DadosCriarMaterial {
   amostra?: boolean;
   conteudo_html?: string;
   arquivo_key?: string;
-  video_provider_id?: string;
-  video_status?: VideoStatus;
 }
 
 export interface DadosAtualizarMaterial {
@@ -108,8 +122,6 @@ export interface DadosAtualizarMaterial {
   amostra?: boolean;
   conteudo_html?: string;
   arquivo_key?: string;
-  video_provider_id?: string;
-  video_status?: VideoStatus;
 }
 
 export interface DepsMateriais {
@@ -124,11 +136,6 @@ const TIPOS_MATERIAL: ReadonlySet<string> = new Set([
   "resumo",
 ]);
 const STATUS_MATERIAL: ReadonlySet<string> = new Set(["rascunho", "publicado"]);
-const VALORES_VIDEO_STATUS: ReadonlySet<string> = new Set([
-  "processando",
-  "pronto",
-  "erro",
-]);
 
 function validarModuleId(module_id: unknown): string {
   const limpo = typeof module_id === "string" ? module_id.trim() : "";
@@ -167,17 +174,6 @@ function validarStatus(status: unknown): MaterialStatus | undefined {
   return status as MaterialStatus;
 }
 
-function validarVideoStatus(video_status: unknown): VideoStatus | undefined {
-  if (video_status === undefined) return undefined;
-  if (typeof video_status !== "string" || !VALORES_VIDEO_STATUS.has(video_status)) {
-    throw erroValidacao(
-      "video_status",
-      "informe um status de vídeo válido (processando, pronto ou erro)",
-    );
-  }
-  return video_status as VideoStatus;
-}
-
 function validarOrdem(ordem: unknown): number | undefined {
   if (ordem === undefined) return undefined;
   if (typeof ordem !== "number" || !Number.isInteger(ordem) || ordem < 1) {
@@ -188,17 +184,14 @@ function validarOrdem(ordem: unknown): number | undefined {
 
 /**
  * Validação ESTRUTURAL por tipo (SPEC-conteudo §3.3-3.5, plano S2 todo 4):
- * pdf exige `arquivo_key`; texto/resumo exige `conteudo_html`; video exige
- * `video_provider_id` + `video_status`. `questoes` é placeholder (nenhum campo
- * obrigatório — comportamento é S4). Campo `undefined` = não informado.
+ * pdf exige `arquivo_key`; texto/resumo exige `conteudo_html`; video é criado
+ * como rascunho sem dados do provedor (upload é uma operação S5 separada).
  */
 function validarEstruturaTipo(
   tipo: MaterialTipo,
   dados: {
     arquivo_key?: unknown;
     conteudo_html?: unknown;
-    video_provider_id?: unknown;
-    video_status?: unknown;
   },
 ): void {
   if (tipo === "pdf" && dados.arquivo_key === undefined) {
@@ -207,31 +200,28 @@ function validarEstruturaTipo(
   if ((tipo === "texto" || tipo === "resumo") && dados.conteudo_html === undefined) {
     throw erroValidacao("conteudo_html", `material ${tipo} exige o conteúdo HTML`);
   }
-  if (tipo === "video") {
-    if (dados.video_provider_id === undefined) {
-      throw erroValidacao("video_provider_id", "material de vídeo exige o id do vídeo no Bunny Stream");
-    }
-    if (dados.video_status === undefined) {
-      throw erroValidacao("video_status", "material de vídeo exige o status do vídeo");
-    }
-  }
 }
 
 /**
- * R11 (SPEC-conteudo §3.6/:75): material `video` com video_status `erro` não
- * pode ser publicado — erro amigável e nenhuma transição de status.
+ * R11 (SPEC-conteudo §3.6/:75): material `video` só pode ser publicado quando
+ * video_status é `pronto` — erro amigável e nenhuma transição de status.
  */
 function verificarVideoPublicavel(
   tipo: MaterialTipo,
   video_status: VideoStatus | null | undefined,
 ): void {
-  if (tipo === "video" && video_status === "erro") {
-    throw new ErroConteudo({
-      code: "regra_negocio",
-      campo: "video_status",
-      mensagem: "o vídeo precisa ser processado com sucesso para publicar",
-    });
-  }
+  if (tipo !== "video" || video_status === "pronto") return;
+  const mensagem =
+    video_status === "processando"
+      ? "o vídeo ainda está sendo processado e não pode ser publicado"
+      : video_status === "erro"
+        ? "o vídeo precisa ser processado com sucesso para publicar"
+        : "o vídeo ainda não está pronto para publicação";
+  throw new ErroConteudo({
+    code: "regra_negocio",
+    campo: "video_status",
+    mensagem,
+  });
 }
 
 /** Remove tags HTML e colapsa espaços — texto puro para a busca. */
@@ -305,14 +295,12 @@ export async function criarMaterial(
   const tipo = validarTipo(dados.tipo);
   const status = validarStatus(dados.status) ?? "rascunho";
   const ordemInformada = validarOrdem(dados.ordem);
-  const video_status = validarVideoStatus(dados.video_status);
-
-  // 2. Estrutura do tipo (arquivo_key / conteudo_html / video_provider_id+video_status).
+  // 2. Estrutura do tipo (arquivo_key / conteudo_html; upload de vídeo é separado).
   validarEstruturaTipo(tipo, dados);
 
   // 3. R11 — criar já publicado também passa pelo guarda (publicado ⇒ publicado_em).
   if (status === "publicado") {
-    verificarVideoPublicavel(tipo, video_status);
+    verificarVideoPublicavel(tipo, null);
   }
 
   // 4. Módulo existe (FK + course_id para o C2).
@@ -348,8 +336,8 @@ export async function criarMaterial(
       amostra: dados.amostra ?? false,
       conteudo_html: tipo === "texto" || tipo === "resumo" ? (dados.conteudo_html ?? null) : null,
       arquivo_key: tipo === "pdf" ? (dados.arquivo_key ?? null) : null,
-      video_provider_id: tipo === "video" ? (dados.video_provider_id ?? null) : null,
-      video_status: tipo === "video" ? (video_status ?? null) : null,
+      video_provider_id: null,
+      video_status: null,
       conteudo_busca,
     },
   });
@@ -370,26 +358,26 @@ export async function atualizarMaterial(
   const tipo = dados.tipo !== undefined ? validarTipo(dados.tipo) : undefined;
   const status = validarStatus(dados.status);
   const ordem = validarOrdem(dados.ordem);
-  const video_status = validarVideoStatus(dados.video_status);
-
   // 2. Existência.
   const material = await db.materials.findUnique({ where: { id } });
   if (!material) throw erroMaterialNaoEncontrado();
 
-  // 3. Nada a atualizar → no-op (retorna o material atual).
-  if (Object.keys(dados).length === 0) return material;
-
-  // 4. Tipo efetivo (novo ou atual) + estrutura quando o tipo MUDAR.
+  // 3. Tipo efetivo (novo ou atual) + estrutura quando o tipo MUDAR.
   const tipoFinal = tipo ?? material.tipo;
   if (tipo !== undefined) validarEstruturaTipo(tipo, dados);
+
+  // 4. Nada a atualizar → no-op (retorna o material atual), mas sem preservar
+  // uma publicação de vídeo que viole R11.
+  if (Object.keys(dados).length === 0) {
+    if (material.status === "publicado") verificarVideoPublicavel(tipoFinal, material.video_status);
+    return material;
+  }
 
   // 5. Transição de status no update — mesmas regras de publicar/despublicar:
   //    publicado ⇒ R11 + publicado_em = now; rascunho ⇒ publicado_em mantido.
   const virarPublicado = status === "publicado" && material.status !== "publicado";
-  if (virarPublicado) {
-    const videoStatusFinal =
-      dados.video_status !== undefined ? video_status : material.video_status;
-    verificarVideoPublicavel(tipoFinal, videoStatusFinal);
+  if ((status ?? material.status) === "publicado") {
+    verificarVideoPublicavel(tipoFinal, material.video_status);
   }
 
   // 6. C2 — amostra única por curso (máx. 1; excluindo este material).
@@ -415,19 +403,38 @@ export async function atualizarMaterial(
   if (dados.arquivo_key !== undefined && tipoFinal === "pdf") {
     data.arquivo_key = dados.arquivo_key;
   }
-  if (dados.video_provider_id !== undefined && tipoFinal === "video") {
-    data.video_provider_id = dados.video_provider_id;
-  }
-  if (video_status !== undefined && tipoFinal === "video") {
-    data.video_status = video_status;
-  }
-
   // 8. Busca recomputada quando o texto pesquisável muda (titulo/tipo/conteudo_html).
   if (titulo !== undefined || tipo !== undefined || dados.conteudo_html !== undefined) {
     const novoTitulo = titulo ?? material.titulo;
     const novoHtml =
       dados.conteudo_html !== undefined ? dados.conteudo_html : material.conteudo_html;
     data.conteudo_busca = montarConteudoBusca(novoTitulo, tipoFinal, novoHtml);
+  }
+
+  if (virarPublicado && tipoFinal === "video") {
+    const dataPublicacao = {
+      ...data,
+      status: "publicado" as const,
+      publicado_em: data.publicado_em ?? new Date(),
+    };
+    const disputa = await db.materials.updateMany({
+      where: { id, status: "rascunho", tipo: "video", video_status: "pronto" },
+      data: dataPublicacao,
+    });
+    if (disputa.count !== 1) {
+      const atual = await db.materials.findUnique({ where: { id } });
+      if (!atual) throw erroMaterialNaoEncontrado();
+      verificarVideoPublicavel(atual.tipo, atual.video_status);
+      if (atual.status === "publicado") return atual;
+      throw new ErroConteudo({
+        code: "regra_negocio",
+        campo: "status",
+        mensagem: "o vídeo foi alterado por outra operação e não foi publicado",
+      });
+    }
+    const atualizado = await db.materials.findUnique({ where: { id } });
+    if (!atualizado) throw erroMaterialNaoEncontrado();
+    return atualizado;
   }
 
   return db.materials.update({ where: { id }, data });
@@ -445,11 +452,40 @@ export async function publicarMaterial(
   const material = await db.materials.findUnique({ where: { id } });
   if (!material) throw erroMaterialNaoEncontrado();
 
+  // R11 (SPEC-conteudo §3.6/:75): vídeo só publica com status `pronto`.
+  verificarVideoPublicavel(material.tipo, material.video_status);
+
   // Já publicado → no-op idempotente (decisão registrada no notepad s2-conteudo).
   if (material.status === "publicado") return material;
 
-  // R11 (SPEC-conteudo §3.6/:75): vídeo com status `erro` não pode ser publicado.
-  verificarVideoPublicavel(material.tipo, material.video_status);
+  // Vídeo usa CAS: upload concorrente só pode ganhar se o registro ainda for
+  // rascunho + pronto; não há fallback para update incondicional.
+  if (material.tipo === "video") {
+    const publicadoEm = new Date();
+    const disputa = await db.materials.updateMany({
+      where: {
+        id,
+        status: "rascunho",
+        tipo: "video",
+        video_status: "pronto",
+      },
+      data: { status: "publicado", publicado_em: publicadoEm },
+    });
+    if (disputa.count !== 1) {
+      const atual = await db.materials.findUnique({ where: { id } });
+      if (!atual) throw erroMaterialNaoEncontrado();
+      verificarVideoPublicavel(atual.tipo, atual.video_status);
+      if (atual.status === "publicado") return atual;
+      throw new ErroConteudo({
+        code: "regra_negocio",
+        campo: "status",
+        mensagem: "o vídeo foi alterado por outra operação e não foi publicado",
+      });
+    }
+    const atualizado = await db.materials.findUnique({ where: { id } });
+    if (!atualizado) throw erroMaterialNaoEncontrado();
+    return atualizado;
+  }
 
   return db.materials.update({
     where: { id },

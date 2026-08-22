@@ -6,10 +6,10 @@ Regras de negócio do domínio de flashcards e revisão espaçada (US-26): cria�
 
 ## Arquitetura
 
-- Serviços aqui consomem `src/lib/db` (Prisma); as rotas `app/flashcards` (área do aluno) chamam estes serviços.
+- `index.ts` implementa `criarFlashcard`, `listarFilaDoDia`, `revisarFlashcard` (F1/F2/F4) e `confirmarSugestao`/`descartarSugestao` (F3), consumindo `src/lib/db` (Prisma) via interface `DbFlashcards` injetável para testes. As rotas `app/flashcards` (área do aluno) chamam estes serviços.
 - Dados na tabela `flashcards` (modelo-de-dados.md §2.8): `user_id` fk (cascade), `material_id` fk null, `question_id` fk null (origem de sugestão de questão errada), `pergunta`, `resposta`, `nivel` int 0-5, `proxima_revisao` date, `revisoes` int.
 - Agendamento: a cada resposta o serviço calcula o próximo nível (acerto sobe, erro volta a 0 — F2) e atualiza `proxima_revisao` com o intervalo do nível; a fila do dia é a lista de cartões com `proxima_revisao <= hoje`.
-- A sugestão automática a partir de questão errada não cria o cartão: gera um pré-cartão e exige confirmação do aluno (F3).
+- F3: a sugestão a partir de questão errada não cria o cartão. O `src/services/questoes/erros.ts` expõe `obterSugestaoFlashcard` (dados do cartão: pergunta = enunciado, resposta = comentário/gabarito); `confirmarSugestao` consome esses dados e cria o cartão, enquanto `descartarSugestao` não cria nada.
 
 ## Decisões tomadas
 

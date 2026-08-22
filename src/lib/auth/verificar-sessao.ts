@@ -5,7 +5,7 @@
 // revogação de sessões JWT: quando o admin bloqueia um usuário, o tokenVersion
 // é incrementado e todo JWT emitido antes daquele bump passa a ser inválido.
 //
-// NUNCA chamado no middleware/Edge (BLOCKER-1): middleware só checa presença
+// NUNCA chamado no proxy/Edge (BLOCKER-1): proxy só checa presença
 // de JWT + role de forma otimista. Este helper é usado em services, route
 // handlers e server components (todos 12/13).
 import type { Session } from "next-auth";

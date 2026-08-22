@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Award, BookOpen, FileText, Home } from "lucide-react";
+import { Award, BookOpen, FileText, Home, ListChecks } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth/auth";
 import { verificarSessaoValida } from "@/lib/auth/verificar-sessao";
 
-const links = [{ href: "/app", label: "Início", icon: Home }, { href: "/app/cursos", label: "Cursos", icon: BookOpen }, { href: "/app/anotacoes", label: "Anotações", icon: FileText }, { href: "/app/cursos", label: "Certificados", icon: Award }];
+const links = [{ href: "/app", label: "Início", icon: Home }, { href: "/app/cursos", label: "Cursos", icon: BookOpen }, { href: "/app/questoes", label: "Questões", icon: ListChecks }, { href: "/app/anotacoes", label: "Anotações", icon: FileText }, { href: "/app/cursos", label: "Certificados", icon: Award }];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await auth();

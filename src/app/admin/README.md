@@ -6,7 +6,7 @@ Raiz da área administrativa do ConcursFoco (URL `/admin`), acessível apenas po
 
 ## Arquitetura
 
-- A área usa o layout **admin-shell** (SPEC-frontend.md:102). **S2 (todo 12)**: `layout.tsx` implementado na versão mínima — valida `requireRole('admin')` no servidor (defesa em profundidade além do middleware) e navegação top-level para `/admin/cursos`; a sidebar densa de 280px/sheet mobile (SPEC-frontend.md:102) fica para o slice de frontend.
+- A área usa o layout **admin-shell** (SPEC-frontend.md:102). **S2 (todo 12)**: `layout.tsx` implementado na versão mínima — valida `requireRole('admin')` no servidor (defesa em profundidade além do proxy) e navegação top-level para `/admin/cursos`; a sidebar densa de 280px/sheet mobile (SPEC-frontend.md:102) fica para o slice de frontend.
 - Rotas são finas (`parse → service → respond`, AGENTS.md §6): cada página (`page.tsx`) chama o service do domínio correspondente em `src/services/`; `actions.ts` por sub-área contém as server actions (requireRole + parse + service + respond).
 - **S2 (todo 12) implementado**: `cursos/` (listagem + CRUD + exclusão com digitação do nome C6 + módulos aninhados com reordenação) e `materiais/` (formulário por tipo, publicar/despublicar, presigned upload de PDF com stub funcional em dev). Demais subpastas seguem planejadas.
 
@@ -38,4 +38,4 @@ src/app/admin/
 - Dashboard básico: [docs/specs/SPEC-admin.md](docs/specs/SPEC-admin.md):27-32 (US-19).
 - Layout admin-shell: [docs/specs/SPEC-frontend.md](docs/specs/SPEC-frontend.md):86-87 e :102 (sidebar densa 280px desktop / sheet mobile; não mobile-first, mas funcional).
 - Slice de implementação: S8 (relatórios) — ver [docs/plano-de-implementacao.md](docs/plano-de-implementacao.md).
-- Proteção de rotas por role via middleware: SPEC-frontend.md:89.
+- Proteção de rotas por role via proxy: SPEC-frontend.md:89.

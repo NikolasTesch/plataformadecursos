@@ -19,7 +19,8 @@ A pasta atua como a interface entre as rotas de `/app/*` e as regras de progress
 ## Arquitetura
 
 - **Serviço único de progresso**: registra conclusão manual (`pdf|texto|questoes`) e automática de vídeo (≥95%, V5); recalcula imediatamente ao desmarcar. Progresso do curso = concluídos ÷ publicados acessíveis — bloqueados fora do denominador (AL1).
-- **S3.2 (2026-08-18)**: `progresso.ts` grava `user_progress` com upsert idempotente, permite desmarcar sem criar linha e reavalia gating no servidor. Vídeo permanece conclusão manual; o hook automático V5 é S5.
+- **S3.2 (2026-08-18)**: `progresso.ts` grava `user_progress` com upsert idempotente, permite desmarcar sem criar linha e reavalia gating no servidor.
+- **S5 (2026-08-19)**: `salvarPosicaoVideo` saneia e persiste posição em cada chamada, limita pela duração informada, chama `concluir` nos limiares de 95%/10s e `obterDadosPlayer` calcula a retomada. O endpoint headless valida sessão e role; nenhum HLS passa pela aplicação.
 - **Anotações**: CRUD por material com texto livre (máx. 10.000 caracteres), listagem "Minhas anotações" e busca por texto; privadas, incluídas na exportação LGPD (US-24).
 - **S3.3 (2026-08-18)**: `anotacoes.ts` valida o limite no servidor e aplica `user_id` em toda operação; a rota e a página do material usam apenas `requireRole("aluno")`.
 - **Certificados**: elegível com 100% dos materiais publicados acessíveis concluídos (AL2); código de verificação único e sem PII (AL3); regenerável com o mesmo código.

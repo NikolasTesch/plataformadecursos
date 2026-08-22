@@ -54,6 +54,7 @@ function criarDb(material: {
       count: vi.fn<DbMateriais["materials"]["count"]>(),
       aggregate: vi.fn<DbMateriais["materials"]["aggregate"]>(),
       update: updatePublicacao,
+      updateMany: vi.fn<DbMateriais["materials"]["updateMany"]>(async () => ({ count: 1 })),
     },
     modules: {
       findUnique: vi.fn<DbMateriais["modules"]["findUnique"]>(),

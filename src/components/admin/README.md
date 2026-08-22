@@ -21,6 +21,7 @@ Autorização é sempre validada no servidor (RBAC): os componentes apenas exibe
 | 2026-08-14 | Pasta criada; componentes de admin separados de `app/` (aluno) — áreas distintas de produto |
 | 2026-08-14 | Admin desktop-first com fallback mobile em sheet (SPEC-frontend.md:102, D-F1) |
 | 2026-08-14 | Confirmações destrutivas (exclusões) usam `AlertDialog` (SPEC-frontend.md:117, US-03) |
+| 2026-08-19 | S5 UI: erro persistido de transcodificação é exibido no painel de vídeo e o mesmo seletor permite reenviar |
 
 ## Informações úteis
 

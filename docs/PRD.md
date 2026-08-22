@@ -1,7 +1,7 @@
 # PRD — ConcursFoco (Plataforma de Estudos para Concursos)
 
-- **Versão**: 2.3
-- **Data**: 2026-08-12
+- **Versão**: 2.8
+- **Data**: 2026-08-19
 - **Status**: [APROVADO]
 - **Método**: Spec-Driven Development (PRD → SPEC master → SPECs por domínio → Implementação → Revisão)
 
@@ -53,7 +53,7 @@ Estudar para concursos exige organização: o concurseiro precisa de conteúdo c
 - Autenticação com roles (aluno/admin), sessão persistente.
 - Painel admin: CRUD de cursos, módulos, materiais (4 tipos), rascunho/publicado, gestão de usuários, dashboard com estatísticas básicas.
 - Área do aluno: navegação por curso/módulo/material, leitura de PDF, texto, player de vídeo, questões com gabarito, progresso, anotações.
-- Pagamentos: assinatura mensal e venda única via Mercado Pago (Checkout Pro + webhooks), gating automático de acesso.
+- Pagamentos: assinatura mensal/anual via Mercado Pago Subscriptions/preapproval e venda única via Checkout Pro (cartão e Pix somente na venda única), com webhooks distintos e gating automático de acesso.
 - Responsivo (mobile-first).
 
 ### 5.2 Fase 2 — Expansão de escopo (aprovada em 2026-08-12)
@@ -124,6 +124,7 @@ Cada domínio tem spec própria em `docs/specs/` (ver SPEC master §4.1).
 - **Venda única** → acesso permanente ao curso comprado.
 - Material bloqueado → mostra título e CTA de compra/assinatura, nunca o conteúdo.
 - Renovação e expiração automáticas via webhooks do Mercado Pago.
+- Assinaturas usam os métodos suportados pelo checkout da preapproval; Pix fica restrito à venda única via Checkout Pro. Cancelamento de assinatura é solicitado inicialmente via suporte.
 
 ### 6.5 Features expandidas (Fase 2)
 - **Trilhas por edital**: admin monta edital (banca, disciplinas com peso), vincula módulos/materiais às disciplinas; aluno ativa trilha e segue plano com progresso por disciplina.
@@ -166,13 +167,16 @@ Cada domínio tem spec própria em `docs/specs/` (ver SPEC master §4.1).
 | Tema | Decisão |
 |---|---|
 | **Framework** | Next.js (App Router) + TypeScript — fullstack em um projeto |
-| **Banco** | PostgreSQL (hosted: Neon/Supabase/Railway) — **dev local via Docker** (decisão 2026-08-12) |
+| **Banco** | PostgreSQL de produção via **Supabase** — **dev local via Docker** (decisões 2026-08-12 e 2026-08-19) |
 | **ORM** | Prisma |
 | **Auth** | Auth.js (NextAuth v5) com credenciais + roles |
 | **Storage PDFs** | Cloudflare R2 + URLs assinadas |
 | **Vídeo** | Bunny Stream (transcodificação automática HLS, player embutido) |
-| **Pagamento** | Mercado Pago — Checkout Pro (assinatura + venda única) + webhooks |
+| **Pagamento** | Mercado Pago — Subscriptions/preapproval (assinatura mensal/anual) + Checkout Pro (venda única, cartão e Pix) + webhooks distintos |
 | **Deploy** | Vercel |
+| **Email transacional** | Resend |
+| **Monitoramento** | Sentry + Vercel |
+| **Staging** | Obrigatório e isolado antes de produção: banco, credenciais e integrações de teste separados |
 | **Testes** | Vitest (unitário), Playwright (E2E) |
 | **Estrutura** | Lógica de negócio em `src/services/`, nunca em rotas |
 
@@ -184,10 +188,16 @@ Cada domínio tem spec própria em `docs/specs/` (ver SPEC master §4.1).
 1. ~~Provedor de vídeo~~ → **Bunny Stream** (aprovado em 2026-08-12).
 2. ~~Especificação~~ → **SPEC v1.0 aprovada** em 2026-08-12.
 3. ~~Nome do produto~~ → **ConcursFoco** (decisão do usuário em 2026-08-13 durante prototipagem).
+4. ~~PostgreSQL de produção~~ → **Supabase** (decisão do usuário em 2026-08-19; validações operacionais permanecem pendentes).
+5. ~~Email transacional~~ → **Resend** (decisão do usuário em 2026-08-19; domínio, remetente e autenticação permanecem pendentes).
+6. ~~Monitoramento~~ → **Sentry + Vercel** (decisão do usuário em 2026-08-19; DSN, alertas, donos e retenção permanecem pendentes).
+7. ~~Staging~~ → **isolado e obrigatório antes de produção** (decisão do usuário em 2026-08-19).
+8. ~~Contrato financeiro~~ → assinatura via Subscriptions/preapproval; venda única via Checkout Pro; Pix somente na venda única; cancelamento inicialmente via suporte (`SPEC-pagamentos.md` v0.7 aprovado explicitamente em 2026-08-19; S6 ainda não implementado).
 
 **Abertas (não bloqueiam implementação):**
-4. Verificação de email no MVP (recomendação: adiar para Fase 2 — já prevista como US-22).
-5. Material de amostra gratuita (recomendação: sim, máx. 1 por curso — já previsto na SPEC como R4).
+9. Verificação de email no MVP (recomendação: adiar para Fase 2 — já prevista como US-22).
+10. Material de amostra gratuita (recomendação: sim, máx. 1 por curso — já previsto na SPEC como R4).
+11. Validações operacionais de Supabase, Resend, Sentry/Vercel e staging, registradas em `docs/operacoes/`; nenhuma validação é considerada concluída neste PRD.
 
 ---
 
@@ -201,3 +211,9 @@ Cada domínio tem spec própria em `docs/specs/` (ver SPEC master §4.1).
 | 2.1 | 2026-08-12 | Features de retenção/conversão (trial, anual, Pix, streak, relatório semanal, banco de erros, favoritas, modo prova, resumos, impressão, ZIP, rastreamento de editais) |
 | 2.2 | 2026-08-12 | Revisão de pendências: relatório semanal removido; múltiplas trilhas ativas; busca indexa PDFs |
 | 2.3 | 2026-08-13 | Nome do produto definido: **ConcursFoco** |
+| 2.4 | 2026-08-19 | Decisões operacionais: Supabase em produção, Resend, Sentry + Vercel e staging isolado obrigatório; gates permanecem pendentes |
+| 2.5 | 2026-08-19 | Revisão financeira: Subscriptions/preapproval para assinaturas, Checkout Pro para venda única, Pix somente na venda única, webhooks distintos e cancelamento inicialmente via suporte; contrato detalhado em `SPEC-pagamentos.md` v0.7 [PENDENTE]. |
+| 2.6 | 2026-08-19 | Consolidação não financeira de Supabase, Resend, Sentry + Vercel, staging isolado e validações ainda pendentes; sem alteração do contrato financeiro. |
+| 2.7 | 2026-08-19 | Nova revisão financeira `SPEC-pagamentos.md` v0.7 [PENDENTE — AGUARDANDO APROVAÇÃO]; sem implementação S6 até aprovação. |
+| 2.8 | 2026-08-19 | `SPEC-pagamentos.md` v0.7 aprovado explicitamente; S6 continua não implementado, decisões operacionais permanecem pendentes e lançamento condicionado a S1–S8. |
+| 2.8 | 2026-08-19 | `SPEC-pagamentos.md` v0.7 aprovado explicitamente; S6 continua não implementado, decisões operacionais permanecem pendentes e lançamento condicionado a S1–S8. |

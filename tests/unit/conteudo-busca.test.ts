@@ -51,7 +51,6 @@ import { buscar, type DbBusca } from "@/services/conteudo/busca";
 import { ErroConteudo } from "@/services/conteudo/erros";
 
 // Relógio fixo p/ entitlements determinísticos (mesmo padrão do gating-min).
-const AGORA = new Date("2026-08-15T12:00:00.000Z");
 const FUTURO = new Date("2026-09-01T00:00:00.000Z");
 
 /** Material fake com o curso incluído (shape retornado pelo findMany da busca). */
@@ -134,10 +133,12 @@ function criarEntitlementBuscaFake(
       nome: "Produto",
       preco_mensal_cents: null,
       preco_anual_cents: null,
+      preco_unico_cents: null,
       curso_id: productCursoId,
       status: productStatus,
     },
     ...entitlement,
+    subscription_id: overrides.subscription_id ?? null,
   };
 }
 

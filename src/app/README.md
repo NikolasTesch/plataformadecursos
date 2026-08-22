@@ -30,7 +30,7 @@ Raiz das rotas da aplicação Next.js (App Router). Aqui vivem os arquivos de ro
 | 2026-08-14 | Árvore de rotas criada antes do código (estrutura + READMEs); `page.tsx`/`layout.tsx` serão criados nos slices |
 | 2026-08-14 | Route groups `(landing)` e `(auth)` para layout compartilhado sem prefixo de URL |
 | 2026-08-15 | Scaffold Next 16.3.1 (create-next-app, temp-dir) criou `layout.tsx`/`globals.css`/`page.tsx` da raiz; `globals.css` traz o tema default do shadcn — tokens da marca (DESIGN.md §12-13) ficam para o slice de frontend |
-| 2026-08-15 | `middleware.ts` na raiz de `src/` (não em `app/`) protege `/admin` e `/app` por role (todo 8, Edge-safe) |
+| 2026-08-19 | `proxy.ts` na raiz de `src/` (não em `app/`) protege `/admin` e `/app` por role (todo 8, Edge-safe), conforme a convenção Next.js 16 |
 
 ## Informações úteis
 

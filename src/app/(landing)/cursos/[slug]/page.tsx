@@ -14,7 +14,7 @@
 // { id, titulo, tipo, amostra } e montarGradeCurso constrói shape novo com
 // esses campos (defesa em profundidade). Amostra (R4) é o ÚNICO material com
 // link (para a página do material — /app/* redireciona a visitante não
-// autenticado para /login via middleware; a rota de leitura chega no todo 9).
+// autenticado para /login via proxy; a rota de leitura chega no todo 9).
 //
 // C10: curso sem nenhum material publicado → 404 (notFound), nunca "curso
 // vazio" público.
@@ -231,7 +231,7 @@ function MaterialItem({
       {material.amostra ? (
         // R4: única exceção — a amostra do curso é legível. A rota de leitura
         // (todo 9) valida gating; visitante sem sessão é redirecionado ao
-        // login pelo middleware (roteiro de amostra, notepad).
+        // login pelo proxy (roteiro de amostra, notepad).
         <Link
           href={`/app/cursos/${cursoSlug}/materiais/${material.id}`}
           className="shrink-0 text-xs font-medium text-primary hover:underline"

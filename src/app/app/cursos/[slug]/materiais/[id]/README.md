@@ -27,6 +27,7 @@ Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (
 | 2026-08-17 | S2 implementa leitura/impressão de texto, resumo e PDF; o gating completo R1-R12 será substituído no S3 |
 | 2026-08-18 | S3.2 adiciona toggle manual de progresso; vídeo automático (V5) permanece fora deste slice |
 | 2026-08-18 | S3.3 adiciona painel mínimo de anotação; service mantém o isolamento por aluno |
+| 2026-08-19 | S5: embed Bunny com token gerado no servidor após gating; Player.js local grava posição com throttling e a CSP é restrita a esta área |
 
 ## Informações úteis
 
@@ -35,3 +36,4 @@ Fluxo: a `page.tsx` chama o service de conteúdo e avalia o gating no servidor (
 - Tipos de material e conclusão: SPEC-aluno.md:47-52 (vídeo conclui automático ≥95%).
 - Anotações por material (máx. 10.000 caracteres): SPEC-aluno.md:54-57.
 - Para questões: toggle modo prova/estudo na abertura do material (SPEC-questoes.md:66).
+- Para vídeo: `gerarUrlEmbedVideo` só é chamado no ramo autorizado e pronto; sem configuração Bunny, o iframe não é renderizado.

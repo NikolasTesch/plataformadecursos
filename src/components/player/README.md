@@ -2,15 +2,19 @@
 
 ## Função
 
-Componentes de reprodução e leitura de materiais: `PlayerVideo` (videoaulas HLS via Bunny Stream), `PdfViewer` (visualização de PDF com URL assinada) e o layout imersivo de player/leitura. Atendem ao comportamento contratado em [docs/specs/SPEC-frontend.md](docs/specs/SPEC-frontend.md):104 (layout) e :122-123 (componentes), com regras de domínio em [docs/specs/SPEC-video.md](docs/specs/SPEC-video.md) e [docs/specs/SPEC-conteudo.md](docs/specs/SPEC-conteudo.md).
+Componentes de reprodução e upload de materiais: `VideoPlayer` (iframe Bunny + Player.js), `VideoUploadPanel` (TUS direto) e o `PdfViewer` existente.
 
 ## Arquitetura
 
-**PlayerVideo** (SPEC-frontend.md:122, SPEC-video.md §3.2):
+**VideoPlayer** (SPEC-frontend.md:122, SPEC-video.md §3.2):
 - Player HLS embutido (URL de streaming fornecida pelo Bunny após gating aprovado — R7/R12).
 - Controle de velocidade (0.5x–2x), fullscreen e qualidade automática (HLS).
-- Posição: salva a cada 5s de reprodução (debounce) e ao pausar/sair; ao reabrir, inicia na posição salva (se ≥ 5s e < 95% da duração).
+- Posição: eventos `timeupdate` são limitados a uma gravação a cada 5s; também salva ao pausar, terminar, sair, ocultar a aba e desmontar em navegação SPA. Falhas são avisos não bloqueantes.
 - Conclusão automática: ao atingir os últimos 10s (ou 95% da duração), o material é marcado concluído (US-14).
+
+**VideoUploadPanel** (SPEC-video.md §3.1):
+- Solicita credenciais apenas pela action admin e envia bytes direto ao endpoint TUS Bunny.
+- Retoma uploads anteriores via `findPreviousUploads`; URL e credenciais ficam somente em memória.
 
 **PdfViewer** (SPEC-frontend.md:123, SPEC-conteudo.md §3.3):
 - Renderiza PDF em viewer embutido; download direto não é exposto.
@@ -27,6 +31,8 @@ Componentes de reprodução e leitura de materiais: `PlayerVideo` (videoaulas HL
 | 2026-08-14 | Pasta criada; player e leitura separados de `app/` — o layout imersivo não usa app-shell |
 | 2026-08-14 | URLs de reprodução e PDF sempre emitidas pelo servidor com gating — o cliente nunca decide acesso (R7/R12) |
 | 2026-08-14 | Leitura em 72ch com sidebar contextual em lg, herdado do layout de player de SPEC-frontend.md:104 |
+| 2026-08-19 | S5 revisão: Player.js passou a ser dependência local; embed usa token server-side e CSP é restrita à área de cursos |
+| 2026-08-19 | S5 UI: salvamento mantém o snapshot mais recente em pause/saída sem bloquear a interface; thumbnail aceita somente URL fornecida pelo servidor |
 
 ## Informações úteis
 

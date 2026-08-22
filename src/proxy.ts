@@ -1,26 +1,21 @@
-// Middleware de proteção de rotas por role — ConcursFoco (todo 8, S1-Fundação).
+// Proxy de proteção de rotas por role — ConcursFoco (todo 8, S1-Fundação).
 //
 // EDGE-SAFE (BLOCKER-1): este arquivo roda fora do Node e NUNCA acessa o banco.
 // A instância de auth é criada a partir de auth.config.ts (split config do
-// todo 7) — que não importa db/PrismaAdapter/argon2 no top-level — e NÃO a
+// todo 7) — que não importa db/PrismaAdapter/argon2 — e NÃO a
 // partir de src/lib/auth/auth.ts (instância Node com PrismaAdapter). A
 // verificação é APENAS presença de JWT + role (checagem otimista); a revogação
 // por tokenVersion (A3) é verificada em Node via verificarSessaoValida nas
 // páginas/actions/route handlers (todos 12/13), nunca aqui.
 //
-// DECISÃO NEXT 16 (2026-08-15, ver notepads/issues): o file convention
-// `middleware` foi deprecado no Next 16 e renomeado para `proxy`
-// (node_modules/next/dist/docs/.../middleware.md). middleware.ts AINDA funciona
-// no 16.3.1 (warnOnce de deprecação apenas; "All functionality remains the
-// same"). Mantido `middleware.ts` por contrato com SPEC-frontend.md:89 e o
-// plano S1; migração para `proxy.ts` registrada como dívida futura (codemod:
-// `npx @next/codemod@canary middleware-to-proxy .`).
+// CONVENÇÃO NEXT 16 (2026-08-19): o file convention `middleware` foi
+// renomeado para `proxy`; este arquivo usa a convenção oficial `proxy.ts`.
 //
 // DECISÃO REDIRECT (2026-08-15): Next 16 PROÍBE a navigation API (redirect()
 // de next/navigation) dentro de Proxy/Middleware — o runtime lança "Next.js
 // navigation API is not allowed to be used in Proxy/Middleware". O mecanismo
 // correto é NextResponse.redirect (docs: redirecting.md §NextResponse.redirect
-// in Proxy). Por isso este arquivo usa NextResponse.redirect em vez de
+// in Proxy). Por isso este proxy usa NextResponse.redirect em vez de
 // redirect() — desvio documentado da instrução original.
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
@@ -63,7 +58,8 @@ export function protegerRota(
   return null;
 }
 
-// Instância Edge-safe: só providers + callbacks do auth.config (sem adapter/DB).
+// Instância Edge-safe: apenas opções compartilhadas (sem provider Node,
+// adapter, DB ou módulos nativos).
 const { auth } = NextAuth(authConfig);
 
 // Wrapper fino: parse do request → função pura → redirect.
@@ -79,7 +75,7 @@ export default auth((req) => {
   }
 });
 
-// Matcher estreito: o middleware só roda em /admin/* e /app/*.
+// Matcher estreito: o proxy só roda em /admin/* e /app/*.
 // (path-to-regexp: `:path*` = zero ou mais segmentos — cobre /admin e /admin/x)
 export const config = {
   matcher: ["/admin/:path*", "/app/:path*"],

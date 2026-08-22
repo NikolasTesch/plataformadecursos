@@ -2,14 +2,14 @@
 
 ## Função
 
-CRUD de materiais de estudo (URL `/admin/materiais`), de uso exclusivo do admin. Suporta os tipos `pdf | texto | video | questoes | resumo` (US-05, US-06, US-07, US-08, US-40) — **implementado no S2 (todo 12)** para os tipos texto/resumo/pdf + estrutura de video/questoes. Estrutura comum: título (obrigatório), `tipo`, `ordem`, `status` (`rascunho | publicado`), `publicado_em` e `amostra` (boolean, default false).
+CRUD de materiais de estudo (URL `/admin/materiais`), de uso exclusivo do admin. Suporta os tipos `pdf | texto | video | questoes | resumo` (US-05, US-06, US-07, US-08, US-40). A edição de material `questoes` incorpora o CRUD administrativo de questões do S4; vídeo é criado como rascunho e seu upload é iniciado por action separada. Estrutura comum: título (obrigatório), `tipo`, `ordem`, `status` (`rascunho | publicado`), `publicado_em` e `amostra` (boolean, default false).
 
 ## Arquitetura
 
 - Página sob o layout **admin-shell** (versão mínima do S2 — ver `src/app/admin/README.md`).
-- Rotas finas: `page.tsx` server carrega o material (`obterMaterial`) e o breadcrumb via serviços (`cursos/_dados.ts`); `actions.ts` contém as server actions (requireRole + parse + service + respond) — TODAS as regras (estrutura por tipo, C2 amostra única, R11 vídeo erro, R5 despublicação) vivem em `src/services/conteudo/materiais`.
+- Rotas finas: `page.tsx` server carrega o material (`obterMaterial`) e o breadcrumb via serviços (`cursos/_dados.ts`); `actions.ts` contém as server actions (requireRole + parse + service + respond) — CRUD genérico não recebe `video_provider_id`/`video_status`; `iniciarUploadVideoAction` delega o upload a `src/services/video`.
 - Upload de PDF: **presigned direct** — a action `criarPresignUploadAction` pede a URL pré-assinada ao storage (`getStorage().createPresignedUpload`, fluxo documentado no README de `src/lib/storage`), o client faz PUT direto na URL (bytes nunca passam pelo servidor) e guarda a `arquivo_key` no material. Em dev sem credenciais R2, o stub responde em `http://127.0.0.1:3000/stub-storage/{key}` — o PUT é recebido pela rota `src/app/api/stub-storage/[...key]` (somente modo stub, admin-gated) e persistido localmente via `StubStorageDriver.salvarArquivo` (fluxo completo documentado no notepad s2-conteudo).
-- Formulário client `material-form.tsx` adaptado por tipo; publicar/despublicar são ações explícitas (`publicarMaterialAction`/`despublicarMaterialAction` — R5 imediato); o status do select só é enviado quando muda (um save comum nunca publica/despublica por acidente).
+- Formulário client `material-form.tsx` adaptado por tipo; para `questoes`, `questoes-manager.tsx` gerencia o CRUD após o material existir. Publicar/despublicar são ações explícitas (`publicarMaterialAction`/`despublicarMaterialAction` — R5 imediato); o status do select só é enviado quando muda.
 - Após criar/atualizar um PDF, a server action dispara a indexação de texto no serviço de conteúdo. A indexação usa a leitura server-side do storage e falha de parser é degradada para busca por título, sem bloquear o restante da action.
 
 ```
@@ -33,6 +33,11 @@ src/app/admin/materiais/
 | 2026-08-15 | Chave do PDF: `materials/{cursoId}/{id}.pdf` — na criação usa uuid provisório gerado no client (o material ainda não existe); na edição usa o id real (fluxo documentado no notepad) |
 | 2026-08-15 | Magic bytes + limite 100MB validados no CLIENTE antes do PUT (espelho UX de C3) e novamente no servidor: limite no presign (driver) e magic bytes na rota stub (dev) |
 | 2026-08-17 | S2 todo 11: indexação pós-upload via `pdf-parse`; falha registrada e não bloqueante; `conteudo_busca` mantém título como fallback |
+| 2026-08-18 | S4.1: CRUD administrativo de questões dentro da edição do material `questoes`; autorização nas actions e comentário sanitizado |
+| 2026-08-19 | S4 concluído e aprovado após gate técnico e QA manual integrado F1–F4 |
+| 2026-08-19 | S5: CRUD genérico não manipula credenciais/status de vídeo; `VideoUploadPanel` valida metadados e usa TUS direto |
+| 2026-08-19 | Upload em processamento renova o mesmo GUID TUS; novos GUIDs só são criados para erro/ausência e material rascunho |
+| 2026-08-19 | S5 UI: `video_erro` é passado à tela sem regra nova; erro permite reenviar pelo fluxo TUS existente |
 
 ## Informações úteis
 

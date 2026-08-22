@@ -117,8 +117,8 @@ npm run dev
 
 # 6. Qualidade e testes
 npm run lint                  # ESLint
-npm run test                  # testes unitários (Vitest — 292 testes)
-npm run test:e2e              # testes E2E (Playwright — 6 testes)
+npm run test                  # testes unitários (Vitest — 377 testes)
+npm run test:e2e              # testes E2E (Playwright — 28 cenários)
 
 # Produção local
 npm run build && npm run start
@@ -141,8 +141,9 @@ Scripts definidos em `package.json`; detalhes por pasta nos READMEs (ex.: `prism
 
 - Greenfield — documentação concluída em 2026-08-13 (PRD v2.3 · SPEC master v2.5 · 15 specs de domínio aprovadas · DESIGN v0.7 — todos aprovados)
 - Estrutura de pastas criada + README por pasta (2026-08-14)
-- **S1 — Fundação concluído (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, middleware com roles e services/auth.
+- **S1 — Fundação concluído (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, proxy com roles e services/auth.
 - **S2 — Conteúdo concluído (2026-08-17)**: CRUD/publicação de conteúdo, R2/stub, sanitização, gating mínimo, leitura/impressão PDF, busca com indexação PDF, admin UI, sales page US-44, 292 testes unitários e 6 E2E verdes.
-- **S3 — Área do aluno core implementada (2026-08-18)**: gating completo, app-shell/home, progresso AL1, anotações privadas, certificados AL2 e verificação pública; 313 testes unitários, 6 E2E gerais, TypeScript/build aprovados. E2E específicos e revisão final F1–F4 ainda pendentes. Certificado PDF ficou fora do slice bounded.
-- Fase atual: **S3 aguardando gate final; próximo slice após aprovação: S4 — Questões**
+- **S3 — Área do aluno core implementada (2026-08-18, gate pendente)**: gating completo, app-shell/home, progresso AL1, anotações privadas, certificados AL2 e verificação pública; TypeScript/build aprovados. Os testes atuais cobrem E1–E4, E7, AL1 e AL2, mas a execução/aprovação integral de E1–E7/AL1/AL2 e a revisão final ainda não estão comprovadas; E5/E6 não estão cobertos no conjunto atual. Certificado PDF ficou fora do slice bounded.
+- **S4 — Questões concluído e aprovado (2026-08-19)**: 341 testes unitários, 23 E2E, gate técnico e QA manual integrado F1–F4 aprovados. Q2 usa prova ad-hoc; simulados/flashcards persistentes ficam no S7, vídeo no S5 e pagamentos no S6.
+- **S5 — Vídeo concluído e formalmente aprovado pelo usuário (2026-08-19)**: passou no gate técnico final com 377 testes unitários, 28 E2E, lint, build e `prisma validate`/`prisma migrate status`. A validação manual operacional com credenciais e painel Bunny reais (upload TUS, callback/webhook e player tokenizado) permanece pendente como validação pré-go-live; S6 não foi iniciado.
 - Marca: **ConcursFoco**

@@ -8,7 +8,6 @@
 // duplicada aqui.
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 
@@ -81,10 +80,4 @@ export async function cadastroAction(
   }
 
   redirect("/app");
-}
-
-/** IP do cliente: primeiro valor de x-forwarded-for, ou 'unknown' (dev = ::1). */
-async function obterIp(): Promise<string> {
-  const cabecalhos = await headers();
-  return cabecalhos.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }

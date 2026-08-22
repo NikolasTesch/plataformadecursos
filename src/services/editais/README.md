@@ -9,7 +9,7 @@ Regras de negócio do domínio de editais e concursos (US-42): rastreamento de e
 - Serviços aqui consomem `src/lib/db` (Prisma); as rotas `app/concursos/[id]` (detalhe do concurso), `app/trilhas/[editalId]` (trilhas por edital) e `admin/editais` (gestão de editais/concursos) chamam estes serviços.
 - Dados em `editals`, `edital_disciplines`, `material_edital` e `concursos`/`user_concursos` (modelo-de-dados.md §2.7): `concursos` tem `origem` enum `manual`/`scraping`, `fonte_url`, datas de inscrição/prova e `status` derivado das datas (`aberto`/`inscricoes`/`em_breve`/`encerrado`), além de `ultimo_sync_em` para scraping.
 - Concurso de scraping entra como `proposto`; a aprovação do admin (ED1) é o que o torna visível publicamente.
-- `editals` tem versionamento (T3) para trilhas: `versao` int e `publicada_em`; o vínculo de material com edital/disciplina vive em `material_edital` (0..1 disciplina por material — T1).
+- `editals` tem versionamento (T3) para trilhas: `versao` int e `publicada_em`; o vínculo de material com edital/disciplina vive em `material_edital` (0..1 disciplina por material — T1). **Republicar** (alteração de plano em edital já `publicado`: adicionar/atualizar/remover disciplina ou vincular/desvincular material) incrementa `editals.versao` **uma vez por mutação** via `increment: 1` atômico (`republicarSePublicado`), sobrescrevendo o estado corrente — **não** modifica `user_trilhas` nem seus `plano_snapshot` (a preservação da v1 do aluno é responsabilidade do serviço de trilhas, via snapshot). Em rascunho, alterações de plano **não** incrementam a versão.
 
 ## Decisões tomadas
 

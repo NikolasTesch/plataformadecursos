@@ -1,7 +1,7 @@
 // Fronteira estável do motor de gating. `podeAcessarMaterial` mantém o
 // contrato S2; `avaliarAcesso` expõe o resultado enriquecido do S3.1.
 
-import { avaliarAcesso, type EntradaAvaliacao, type ResultadoGating as ResultadoComRegra } from "./engine";
+import { avaliarAcesso, avaliarAcessoCurso, type EntradaAvaliacao, type EntradaAvaliacaoCurso, type ResultadoGating as ResultadoComRegra } from "./engine";
 import { chaveCache, guardarCache, obterCache } from "./cache";
 
 export type OrigemEntitlement = "pagamento" | "trial" | "admin";
@@ -40,13 +40,29 @@ export interface ParamsPodeAcessarMaterial {
 }
 export interface DepsGating { agora?: Date; usarCache?: boolean }
 
-export type { EntradaAvaliacao, ResultadoComRegra };
+export interface ParamsPodeAcessarCurso {
+  userId: string;
+  curso: CursoGating;
+  entitlements: readonly EntitlementGating[];
+  usuario?: EntradaAvaliacao["usuario"];
+  assinatura?: EntradaAvaliacao["assinatura"];
+}
+
+/** Gating curso-cêntrico para entidades sem material (ex.: simulados, Q4). Reutiliza o motor. */
+export function podeAcessarCurso(params: ParamsPodeAcessarCurso, deps: DepsGating = {}): ResultadoGating {
+  const agora = deps.agora ?? new Date();
+  if (params.usuario?.bloqueado === true) return { permitido: false, motivo: "bloqueado" };
+  const resultado = avaliarAcessoCurso(params, agora);
+  return { permitido: resultado.permitido, motivo: resultado.motivo };
+}
+
+export type { EntradaAvaliacao, EntradaAvaliacaoCurso, ResultadoComRegra };
 export { invalidarGatingCache, invalidarPorUsuario, invalidarPorCurso, invalidarGlobal, limparCacheGating, GATING_CACHE_TTL_MS } from "./cache";
-export { avaliarAcesso } from "./engine";
+export { avaliarAcesso, avaliarAcessoCurso };
 
 function contextoCache(input: ParamsPodeAcessarMaterial): string {
   return JSON.stringify({
-    material: [input.material.status, input.material.amostra, input.material.video_status],
+    material: [input.material.status, input.material.tipo, input.material.amostra, input.material.video_status],
     curso: input.curso.incluido_assinatura,
     usuario: input.usuario?.bloqueado,
     assinatura: input.assinatura,
@@ -61,7 +77,13 @@ function estadoCache(input: ParamsPodeAcessarMaterial, agora: Date): ResultadoCo
 export function podeAcessarMaterial(params: ParamsPodeAcessarMaterial, deps: DepsGating = {}): ResultadoGating {
   const agora = deps.agora ?? new Date();
   // Guardas de revogação são sempre reavaliadas, inclusive diante de cache.
-  if (params.usuario?.bloqueado === true || params.material.status !== "publicado" || params.material.video_status === "erro") {
+  if (
+    params.usuario?.bloqueado === true ||
+    params.material.status !== "publicado" ||
+    ((params.material.tipo === "video" ||
+      (params.material.video_status !== undefined && params.material.video_status !== null)) &&
+      params.material.video_status !== "pronto")
+  ) {
     return { permitido: false, motivo: "bloqueado" };
   }
   const usarCache = deps.usarCache ?? true;

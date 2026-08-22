@@ -66,6 +66,13 @@ plataformadecursos/
 │   ├── DESIGN.md      # Direção visual e arte (v0.7 [APROVADO])
 │   ├── modelo-de-dados.md   # Schema consolidado (base do Prisma no S1)
 │   ├── plano-de-implementacao.md  # Slices S1–S8 e ordem de entrega
+│   ├── legal/                # Documentos legais — rascunhos [PENDENTE]
+│   │   ├── README.md         # Índice e regras dos documentos legais
+│   │   └── <documento>.md    # Termos e políticas legais
+│   ├── operacoes/            # Runbooks operacionais — rascunhos [PENDENTE]
+│   │   ├── README.md         # Índice, gates e baseline operacional S1–S8
+│   │   ├── go-live.md        # Go/no-go, deploy, validação e declaração de lançamento
+│   │   └── suporte.md        # Triagem e escalonamento de suporte
 │   └── specs/         # Specs por domínio + STATUS-APROVACAO.md (checklist SDD)
 │       ├── SPEC-<dominio>.md   # 15 specs [APROVADO] + mobile [IDEALIZAÇÃO]
 │       └── STATUS-APROVACAO.md # Matriz de aprovação e decisões da revisão de pendências
@@ -138,12 +145,14 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 
 ## 10. NOTAS
 
-### Estado atual do projeto (2026-08-18)
+### Estado atual do projeto (2026-08-19)
 
-- **Fase**: **S3 — Área do aluno core implementada**, aguardando E2E específico, gate final e revisão F1–F4. Próximo slice após aprovação: **S4 — Questões**.
-- **S1 entregue (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, middleware com roles e services/auth.
+- **Fase**: **S5 — Vídeo concluído e formalmente aprovado pelo usuário** (2026-08-19), com gate técnico final concluído: 377 testes unitários, 28 E2E, lint, build e `prisma validate`/`prisma migrate status`. A validação manual operacional com credenciais e painel Bunny reais (upload TUS, callback/webhook e player tokenizado) permanece pendente como validação pré-go-live; **S6.1 (bloqueadores de domínio de pagamentos) implementado e verificado em PostgreSQL real** (ver `docs/specs/S6-pagamentos-tasks.md` §"Execução PostgreSQL"), S6.2/S6.3 ainda não iniciados.
+- **S1 entregue (2026-08-15)**: scaffold Next.js 16.3.1 + TypeScript, PostgreSQL 16 via Docker (host 5433), schema Prisma com 30 models, seed idempotente, Auth.js v5, proxy com roles e services/auth.
 - **S2 entregue (2026-08-17)**: CRUD/publicação de conteúdo, storage R2/stub, sanitização, gating mínimo, leitura/impressão PDF, busca com indexação PDF, admin UI e sales page US-44; 292 testes unitários, 6 E2E verdes e TypeScript/build aprovados.
-- **S3 implementada (2026-08-18, gate pendente)**: gating completo com cache/invalidação, navegação e app-shell, progresso AL1, anotações privadas, certificados AL2 e verificação pública; 313 testes unitários, 6 E2E gerais, TypeScript/build aprovados. E2E específicos E1–E7/AL1/AL2 e revisão final ainda pendentes. Certificado PDF ficou fora do slice bounded.
+- **S3 implementada (2026-08-18, gate pendente)**: gating completo com cache/invalidação, navegação e app-shell, progresso AL1, anotações privadas, certificados AL2 e verificação pública; 313 testes unitários, 6 E2E gerais, TypeScript/build aprovados. A pendência residual é a comprovação do gate específico: os testes atuais cobrem E1–E4, E7, AL1 e AL2, mas não há registro de execução/aprovação integral de E1–E7/AL1/AL2 nem da revisão final (E5/E6 não estão cobertos no conjunto atual). Certificado PDF ficou fora do slice bounded.
+- **S4 concluído (2026-08-19)**: CRUD administrativo, resposta/feedback, tentativas cumulativas, banco de erros, favoritas, modo estudo/prova ad-hoc, rotas do aluno e E2E-Q1–Q5 + gating. Q2 não cria simulado persistente; simulados/flashcards persistentes ficam no S7, vídeo no S5 e pagamentos no S6. Foram aprovados 341 testes unitários, TypeScript, build e 23 E2E; F1–F4 aprovados, incluindo QA manual integrado.
+- **S5 implementada e formalmente aprovada pelo usuário (2026-08-19)**: vídeo com Bunny Stream passou no gate técnico final com 377 testes unitários, 28 E2E, lint, build e `prisma validate`/`prisma migrate status`. A validação manual operacional com credenciais e painel Bunny reais (upload TUS, callback/webhook e player tokenizado) permanece pendente como validação pré-go-live; **S6.1 (bloqueadores de domínio de pagamentos) implementado e verificado em PostgreSQL real** (ver `docs/specs/S6-pagamentos-tasks.md` §"Execução PostgreSQL"), S6.2/S6.3 ainda não iniciados.
 
 ### Histórico do estado (2026-08-13/14, mantido)
 
@@ -158,10 +167,27 @@ Cada pasta acima terá seu `README.md` ao ser criada.
 ### Decisões técnicas vigentes
 
 - Banco de desenvolvimento: PostgreSQL local via Docker (decisão 2026-08-12) — **porta host 5433** (5432 ocupada por outro projeto; container segue 5432).
+- Banco de produção: **Supabase**, decisão do usuário em 2026-08-19. Plano
+  contratado, região, PITR/backups, retenção, credenciais, acesso mínimo e
+  teste de restauração antes do go-live permanecem validações operacionais
+  pendentes em `docs/operacoes/`.
 - Prisma **7** com generator `prisma-client` (output `src/generated/prisma`) + `prisma.config.ts`; driver adapter `@prisma/adapter-pg` obrigatório; `prisma migrate dev` não roda `generate` sozinho.
 - Senhas: **argon2** nativo (argon2id, pré-built) — seed e services/auth; hashes nunca logados (A1).
 - Vídeo: Bunny Stream (transcodificação HLS, player embutido).
 - Pagamento: Mercado Pago (Checkout Pro + webhooks idempotentes, cartão e Pix).
+- Email transacional: **Resend**, decisão do usuário em 2026-08-19. Domínio,
+  remetente, SPF/DKIM/DMARC, ambientes de teste/produção e credenciais
+  permanecem validações operacionais pendentes em `docs/operacoes/`.
+- Monitoramento: **Sentry + Vercel**, decisão do usuário em 2026-08-19. DSN,
+  alertas, donos, canais e retenção permanecem validações operacionais
+  pendentes; nenhum segredo deve ser documentado.
+- Staging isolado obrigatório antes de produção: banco, credenciais e
+  integrações de teste devem ser separados dos equivalentes de produção.
+- Jobs/scheduler: decisão do usuário mantém o mecanismo `[PENDENTE]`; não
+  escolher scheduler, fila ou worker até aprovação operacional.
+- Lançamento comercial somente após todos os slices S1–S8 concluídos, aprovados
+  e evidenciados; runbooks operacionais ainda estão `[PENDENTE]` (decisão
+  2026-08-19).
 - Decisões da revisão de pendências (21 itens) registradas em `docs/specs/STATUS-APROVACAO.md` §1.
 - Decisões de implementação do S1 (D1–D36) registradas em `.omo/notepads/s1-fundacao/decisions.md`.
 

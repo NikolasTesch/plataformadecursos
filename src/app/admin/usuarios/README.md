@@ -8,7 +8,7 @@ Gestão de usuários da plataforma (URL `/admin/usuarios`), de uso exclusivo do 
 
 - Página sob o layout **admin-shell** (SPEC-frontend.md:102).
 - Rota fina: `page.tsx` futuro chama o service `src/services/auth` (domínio que inclui US-20); revogação de sessões passa por `src/lib/auth`.
-- Bloqueio aplica-se imediatamente: middleware valida a role/status a cada requisição, e sessões ativas são invalidadas no servidor — a UI nunca é a única barreira.
+- Bloqueio aplica-se imediatamente: proxy valida a role/status a cada requisição, e sessões ativas são invalidadas no servidor — a UI nunca é a única barreira.
 
 ## Decisões tomadas
 

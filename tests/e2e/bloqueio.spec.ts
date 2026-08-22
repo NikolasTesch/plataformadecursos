@@ -5,10 +5,10 @@
 //   torna o spec repetível no mesmo dev DB) → login do aluno seed via UI
 //   (sessão ACTIVE, tokenVersion 0 no JWT) → setBloqueado(alunoId, true) via
 //   service (bump tokenVersion → 1) → assert de ESTADO REAL no banco (1/true)
-//   → próxima navegação a /app: o middleware passa (JWT ainda assinado), o
+//   → próxima navegação a /app: o proxy passa (JWT ainda assinado), o
 //   check em NODE (verificarSessaoValida no server component) detecta o bump e
 //   redireciona para /login — a revogação é enforcement em Node, NUNCA
-//   middleware/Edge (BLOCKER-1) → re-login negado com "conta suspensa" (UMA
+//   proxy/Edge (BLOCKER-1) → re-login negado com "conta suspensa" (UMA
 //   tentativa: contas bloqueadas não registram falha — D33; não acumular rate
 //   limit por IP).
 //
@@ -168,7 +168,7 @@ test("bloqueio revoga sessão ativa e nega re-login (E2E-A1)", async ({
 
   await test.step("próxima navegação: /app → /login (enforcement em NODE)", async () => {
     // O JWT do browser ainda é válido criptograficamente (não expirou): o
-    // middleware (presença de JWT) PASSA; quem detecta o bump é o check em
+    // proxy (presença de JWT) PASSA; quem detecta o bump é o check em
     // Node do server component (verificarSessaoValida) e redireciona.
     await page.goto("/app");
     await expect(page).toHaveURL(/\/login/);

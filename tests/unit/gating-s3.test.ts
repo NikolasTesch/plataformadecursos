@@ -19,6 +19,9 @@ describe("gating S3.1", () => {
   it.each([
     ["rascunho", { ...base, material: { ...base.material, status: "rascunho" as const } }, false],
     ["amostra", { ...base, entitlements: [], material: { ...base.material, amostra: true } }, true],
+    ["vídeo processando não libera amostra", { ...base, entitlements: [], material: { ...base.material, tipo: "video", video_status: "processando", amostra: true } }, false],
+    ["vídeo erro não libera amostra", { ...base, entitlements: [], material: { ...base.material, tipo: "video", video_status: "erro", amostra: true } }, false],
+    ["vídeo pronto libera amostra", { ...base, entitlements: [], material: { ...base.material, tipo: "video", video_status: "pronto", amostra: true } }, true],
     ["produto inativo", { ...base, entitlements: [{ ...base.entitlements[0], product: { ...base.entitlements[0].product!, status: "inativo" as const } }] }, false],
     ["conta bloqueada", { ...base, usuario: { id: "u1", bloqueado: true } }, false],
   ] as const)("%s", (_nome, input, permitido) => {

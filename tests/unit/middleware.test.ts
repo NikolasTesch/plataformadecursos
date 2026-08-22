@@ -1,11 +1,11 @@
-// Testes unitários do matcher de proteção de rotas do middleware — ConcursFoco.
+// Testes unitários do matcher de proteção de rotas do proxy — ConcursFoco.
 //
-// Testa a função PURA protegerRota (src/middleware.ts) — sem runtime Next:
+// Testa a função PURA protegerRota (src/proxy.ts) — sem runtime Next:
 // apenas pathname + estado de auth → destino do redirect (ou null). Os casos
 // cobrem o contrato do plano S1 todo 8 e SPEC-frontend.md:89.
 //
 // MOCKS (obrigatórios — descoberto no todo 8, ver notepads/issues):
-// Importar src/middleware.ts executa o top-level `NextAuth(authConfig)` e o
+// Importar src/proxy.ts executa o top-level `NextAuth(authConfig)` e o
 // `import { NextResponse } from "next/server"`. Sob o configLoader nativo do
 // Vite 7 (vitest v4), o next-auth real falha ao resolver `next/server`
 // ("Cannot find module 'next/server' ... Did you mean next/server.js?").
@@ -21,9 +21,9 @@ vi.mock("next/server", () => ({
   NextResponse: { redirect: () => undefined },
 }));
 
-import { protegerRota } from "@/middleware";
+import { protegerRota } from "@/proxy";
 
-describe("protegerRota (matcher de proteção do middleware)", () => {
+describe("protegerRota (matcher de proteção do proxy)", () => {
   describe("/admin/* — painel administrativo", () => {
     it("sem sessão → redireciona para /login", () => {
       expect(protegerRota("/admin", false, false)).toBe("/login");
